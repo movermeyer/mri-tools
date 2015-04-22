@@ -14,7 +14,7 @@ MRI Tools
 
 Various tools for MRI related work.
 
-* Free software: LGPL v3 license
+* Free software: BSD 3-Clause license 
 * Documentation: https://mri-tools.readthedocs.org.
 
 Features
