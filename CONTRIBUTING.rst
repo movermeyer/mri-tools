@@ -13,7 +13,7 @@ Types of Contributions
 Report Bugs
 ~~~~~~~~~~~
 
-Report bugs at https://github.com/robbert-harms/mri_tools/issues.
+Report bugs at https://github.com/robbert-harms/mri-tools/issues.
 
 If you are reporting a bug, please include:
 
@@ -43,7 +43,7 @@ articles, and such.
 Submit Feedback
 ~~~~~~~~~~~~~~~
 
-The best way to send feedback is to file an issue at https://github.com/robbert-harms/mri_tools/issues.
+The best way to send feedback is to file an issue at https://github.com/robbert-harms/mri-tools/issues.
 
 If you are proposing a feature:
 
@@ -55,17 +55,17 @@ If you are proposing a feature:
 Get Started!
 ------------
 
-Ready to contribute? Here's how to set up `mri_tools` for local development.
+Ready to contribute? Here's how to set up `mri-tools` for local development.
 
-1. Fork the `mri_tools` repo on GitHub.
+1. Fork the `mri-tools` repo on GitHub.
 2. Clone your fork locally::
 
-    $ git clone git@github.com:your_name_here/mri_tools.git
+    $ git clone git@github.com:your_name_here/mri-tools.git
 
 3. Install your local copy into a virtualenv. Assuming you have virtualenvwrapper installed, this is how you set up your fork for local development::
 
-    $ mkvirtualenv mri_tools
-    $ cd mri_tools/
+    $ mkvirtualenv mri-tools
+    $ cd mri-tools/
     $ python setup.py develop
 
 4. Create a branch for local development::
@@ -76,7 +76,7 @@ Ready to contribute? Here's how to set up `mri_tools` for local development.
 
 5. When you're done making changes, check that your changes pass flake8 and the tests, including testing other Python versions with tox::
 
-    $ flake8 mri_tools tests
+    $ flake8 mri-tools tests
     $ python setup.py test
     $ tox
 
@@ -100,7 +100,7 @@ Before you submit a pull request, check that it meets these guidelines:
    your new functionality into a function with a docstring, and add the
    feature to the list in README.rst.
 3. The pull request should work for Python 2.7, and 3.4. Check
-   https://travis-ci.org/robbert-harms/mri_tools/pull_requests
+   https://travis-ci.org/robbert-harms/mri-tools/pull_requests
    and make sure that the tests pass for all supported Python versions.
 
 Tips
@@ -108,4 +108,4 @@ Tips
 
 To run a subset of tests::
 
-    $ python -m unittest tests.test_mri_tools
+    $ python -m unittest tests.test_mri-tools
