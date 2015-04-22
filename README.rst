@@ -2,8 +2,8 @@
 MRI Tools
 ===============================
 
-.. image:: https://badge.fury.io/py/mri_tools.png
-    :target: http://badge.fury.io/py/mri_tools
+.. image:: https://badge.fury.io/gh/robbert-harms%2Fmri-tools.svg
+    :target: http://badge.fury.io/gh/robbert-harms%2Fmri-tools
 
 .. image:: https://travis-ci.org/robbert-harms/mri-tools.svg?branch=master 
     :target: https://travis-ci.org/robbert-harms/mri-tools
