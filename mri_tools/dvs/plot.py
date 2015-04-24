@@ -9,6 +9,15 @@ __email__ = "robbert.harms@maastrichtuniversity.nl"
 
 class DVSPlot(object):
 
+    def draw_table_at_index(self, dvs, table_ind):
+        """Draw a specific table from the given DVS object.
+
+        Args:
+            dvs (DVS): The dvs object
+            table_ind (int): The index of the DVS table to draw
+        """
+        self.draw_table(dvs.dvs_tables[table_ind].table)
+
     def draw_table(self, table):
         """Enqueue a table plot.
 

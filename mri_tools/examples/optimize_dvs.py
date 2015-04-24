@@ -1,5 +1,5 @@
 from mri_tools.dvs.io import read_dvs, write_dvs
-from mri_tools.dvs.optimizing import get_hot_spots, get_cold_spots, swap, remove_hotspots
+from mri_tools.dvs.optimizing import LowHighOptimizer
 from mri_tools.dvs.plot import DVSPlot
 import numpy as np
 
@@ -12,16 +12,19 @@ dvs = read_dvs('/home/robbert/Documents/phd/gradient_files/MBIC_DiffusionVectors
 
 # print(dvs.get_overview_representation())
 
-table_nmr = 17
-table = dvs.tables[table_nmr].table
+table_ind = 0
 
 dvs_plot = DVSPlot()
-dvs_plot.draw_table(table)
+dvs_plot.draw_table_at_index(dvs, table_ind)
 
-table = remove_hotspots(table, max_diff=0.1, max_gradient=0.95)
-hot_spots = get_hot_spots(table, max_diff=0.1, max_gradient=0.95)
+optimizer = LowHighOptimizer()
+optimized_dvs = optimizer.optimize(dvs)
 
-dvs_plot.draw_table(table)
+# dvs_plot.draw_table_at_index(optimized_dvs, table_ind)
+
+optimized_table = optimizer.optimize(dvs.dvs_tables[table_ind].table)
+dvs_plot.draw_table(optimized_table)
+
 dvs_plot.plot_block()
 
-write_dvs('/home/robbert/Documents/phd/gradient_files/MBIC_DiffusionVectors_v2.dvs', dvs)
+write_dvs('/home/robbert/Documents/phd/gradient_files/MBIC_DiffusionVectors_v2.dvs', optimized_dvs)
