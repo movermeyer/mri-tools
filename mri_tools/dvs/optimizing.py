@@ -8,16 +8,20 @@ __maintainer__ = "Robbert Harms"
 __email__ = "robbert.harms@maastrichtuniversity.nl"
 
 
-class AbstractDVSOptimizer(object):
+class AbstractDVSLayoutOptimizer(object):
 
     def optimize(self, dvs):
-        """Optimize the given DVS object.
+        """Optimize the layout of the given DVS object.
 
-        If a DVS object is given all tables in the DVS are optimized.
+        The problem the optimizer tries to solve is the following. The Siemens Prisma 3T scanners crashes
+        when there are two gradients after each other which have a strong amplitude on one of the axis, both
+        of the same polarity. For example: (0, 0, 1) and (0, 1, 0) will crash the scanner.
+
+        To solve this issue implement this class and implement a heuristic.
 
         Args:
             dvs (DVS, DVSDirectionTable or ndarray): Either a complete DVS object, a DVSDirectionTable object or
-                a ndarray with shape (n, 3).
+                a ndarray with shape (n, 3). If a DVS object is given all tables in the DVS are optimized.
 
         Returns:
             A copy of the original object but then optimized.
@@ -47,7 +51,7 @@ class AbstractDVSOptimizer(object):
         return table
 
 
-class LowHighOptimizer(AbstractDVSOptimizer):
+class LowHighOptimizer(AbstractDVSLayoutOptimizer):
 
     def _optimize_table(self, table):
         max_gradient_dir = np.max(table, axis=1)
