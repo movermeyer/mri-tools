@@ -1,5 +1,5 @@
 from mri_tools.dvs.io import read_dvs, write_dvs
-from mri_tools.dvs.optimizing import LowHighOptimizer
+from mri_tools.dvs.restructuring import LowHighOptimizer
 from mri_tools.dvs.plot import DVSPlot
 
 __author__ = 'Robbert Harms'
@@ -25,4 +25,4 @@ dvs_plot.draw_table(optimized_table)
 
 dvs_plot.plot_block()
 
-write_dvs('/home/robbert/Documents/phd/gradient_files/MBIC_DiffusionVectors_v2.dvs', optimized_dvs)
+write_dvs('/home/robbert/Documents/phd/gradient_files/MBIC_DiffusionVectors_v1.dvs', optimized_dvs)

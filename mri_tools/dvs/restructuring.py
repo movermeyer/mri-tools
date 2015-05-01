@@ -53,11 +53,23 @@ class AbstractDVSLayoutOptimizer(object):
 
 class LowHighOptimizer(AbstractDVSLayoutOptimizer):
 
+    def __init__(self, number_of_interweaving=0):
+        """Recursively splits the max gradient of the input vector into two halves and interweaves them.
+
+        Args:
+            number_of_interweaving (int): How many recursive times we want to interleave
+
+        Attributes:
+            number_of_interweaving (int): How many recursive times we want to interleave
+
+        Returns:
+            A list with the indices interwoven.
+        """
+        self.number_of_interweaving = number_of_interweaving
+
     def _optimize_table(self, table):
         max_gradient_dirs = np.max(table, axis=1)
         interwoven = self._get_ordered_indices(max_gradient_dirs)
-
-        print(self._get_ordered_indices(np.array([1, 2, 3, 4, 5, 6, 7])))
 
         new_table = np.zeros_like(table)
         for i, ind in enumerate(interwoven):
@@ -69,9 +81,9 @@ class LowHighOptimizer(AbstractDVSLayoutOptimizer):
 
     def _get_ordered_indices(self, max_gradient_dirs):
         low_high_ind = np.argsort(max_gradient_dirs)
-        return self._split_interweave(low_high_ind, number_of_interweaving=1)
+        return self._split_interweave(low_high_ind)
 
-    def _split_interweave(self, input_vector, number_of_interweaving=0, current_depth=0):
+    def _split_interweave(self, input_vector, current_depth=0):
         """Recursively splits the input vector into two halves and interweaves them.
 
         A simple example is the following:
@@ -97,8 +109,8 @@ class LowHighOptimizer(AbstractDVSLayoutOptimizer):
         if len(halves) < 2:
             return input_vector
 
-        if current_depth < number_of_interweaving:
-            halves = [self._split_interweave(v, number_of_interweaving, current_depth + 1) for v in halves]
+        if current_depth < self.number_of_interweaving:
+            halves = [self._split_interweave(v, current_depth + 1) for v in halves]
 
         first_half = halves[0]
         second_half = list(reversed(halves[1]))
