@@ -1,2 +1,5 @@
 wheel>=0.23.0
 numpy
+nibabel
+nipype
+scikit-image
