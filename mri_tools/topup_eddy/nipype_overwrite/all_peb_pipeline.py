@@ -17,6 +17,13 @@ __maintainer__ = "Robbert Harms"
 __email__ = "robbert.harms@maastrichtuniversity.nl"
 
 
+"""This module overwrites some parts of Nipype since they did not work correctly.
+
+The idea is that at a low level two functions did not work correctly. To enable nipype to use the fixed versions of
+these functions we have to copy the entire chain to make it work.
+"""
+
+
 def all_peb_pipeline(name='hmc_sdc_ecc',
                      epi_params=dict(echospacing=0.77e-3,
                                      acc_factor=3,
@@ -453,6 +460,7 @@ def hmc_split(in_file, in_bval, ref_num=0, lowbval=25.0):
     if (isdefined(ref_num) and (ref_num < len(lowbs))):
         volid = [ref_num]
 
+    # todo add next two lines in Nipype git
     if len(volid) == 1:
         volid = volid[0]
 
@@ -482,6 +490,7 @@ def hmc_split(in_file, in_bval, ref_num=0, lowbval=25.0):
 
 
 class N4BiasFieldCorrectionInputSpec(ANTSCommandInputSpec):
+    # todo dimensionality in Nipype git
     dimension = traits.Enum(3, 2, argstr='--image-dimensionality %d',
                             usedefault=True,
                             desc='image dimension (2 or 3)')
@@ -613,6 +622,7 @@ class N4BiasFieldCorrection(ANTSCommand):
         return outputs
 
 
+# todo remove this if N4BiasFieldCorrection works again
 def dwi_flirt(name='DWICoregistration', excl_nodiff=False,
               flirt_param={}):
     """
