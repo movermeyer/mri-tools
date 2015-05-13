@@ -20,30 +20,6 @@ class InfoReader(object):
         self._parser = parser
         self._settings_file = settings_file
 
-    def get_read_out_times(self):
-        """Get and calculate the read out times from the echo spacing and epi factor.
-
-        This will search for and calculate the following: 1e-3 * echo_spacing * epi_factor.
-
-        Returns:
-            dict: A dictionary with as keys the session names and as values the read out times.
-        """
-        echo_spacings = self._parser.get_value(self._settings_file, 'Echo spacing')
-        epi_factors = self._parser.get_value(self._settings_file, 'EPI factor')
-
-        read_out_times = {}
-        for session in echo_spacings.keys():
-            echo_spacing = echo_spacings[session]
-            epi_factor = epi_factors[session]
-
-            if echo_spacing is not None and epi_factor is not None:
-                echo_spacing = float(re.sub(r'[^0-9.]', '', echo_spacing))
-                epi_factor = float(re.sub(r'[^0-9.]', '', epi_factor))
-
-                read_out_time = 1e-3 * echo_spacing * epi_factor
-                read_out_times.update({session: read_out_time})
-        return read_out_times
-
     def get_echo_spacing(self):
         """Get the echo spacing from the settings file. This will convert the input from ms to seconds.
 
@@ -81,10 +57,18 @@ class InfoReader(object):
         return {k: float(re.sub(r'[^0-9.]', '', v)) for k, v in values.items() if v is not None}
 
 
-
 class PrismaXMLParser(ScannerSettingsParser):
 
     def get_value(self, settings_file, key):
+        """This will get a value for the given key for every session in the settings file.
+
+        Args:
+            settings_file (str): the filename to the settings file
+            key (str): the key for which to get the value for every session.
+
+        Returns:
+            dict: with as keys the session name and as value the value for the key for that session
+        """
         tree = ET.parse(settings_file)
         root = tree.getroot()
 

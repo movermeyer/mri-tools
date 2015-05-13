@@ -438,7 +438,7 @@ def sdc_peb(name='peb_correction',
     ])
     return wf
 
-
+# todo change lowbval
 def hmc_split(in_file, in_bval, ref_num=0, lowbval=25.0):
     """
     Selects the reference and moving volumes from a dwi dataset
