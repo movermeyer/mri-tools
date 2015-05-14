@@ -8,7 +8,7 @@ __email__ = "robbert.harms@maastrichtuniversity.nl"
 
 input_dir = '/home/robbert/programming/python/mdt/bin/multite_20150417_alard/1_uncorrected/'
 tmp_dir = '/home/robbert/programming/python/mdt/bin/multite_20150417_alard/2_corrected_tmp/'
-output_dir = '/home/robbert/programming/python/mdt/bin/multite_20150417_alard/3_scans/'
+output_dir = '/home/robbert/programming/python/mdt/bin/multite_20150417_alard/3_corrected/'
 
 items = (('mbdiffb1k35dirs2mmAPMB2G2', 'mbdiffb1k35dirs2mmPAMB2G2', '35dir'),
          ('mbdiffb2k53dirs2mmAPMB2G2', 'mbdiffb2k53dirs2mmPAMB2G2', '53dir'),
