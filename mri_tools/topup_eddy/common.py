@@ -13,6 +13,16 @@ __email__ = "robbert.harms@maastrichtuniversity.nl"
 
 
 def run_pre_processing(epi_name, alt_epi_name, output_name, input_dir, tmp_dir, output_dir):
+    """Run the pre-processing on a single AP, PA volume set.
+
+    Args:
+        epi_name: the name of the epi volume. Should be located in the input dir.
+        alt_epi_name: the name of the alternative epi volume (the PA scan). Should be located in the input dir.
+        output_name: the name of the output volume
+        input_dir: the location of the epi volume information files
+        tmp_dir: the temporary storage dir for the calculations
+        output_dir: the output location for the output files (bvec, bval, mask, image)
+    """
     epi_bname = os.path.join(input_dir, epi_name)
     alt_epi_bname = os.path.join(input_dir, alt_epi_name)
 
@@ -36,31 +46,21 @@ def run_pre_processing(epi_name, alt_epi_name, output_name, input_dir, tmp_dir, 
 
 
 def read_epi_params(item_basename):
-    """Read all the necessary EPI parameters from files with the given basename.
+    """Read all the necessary EPI parameters from text files with the given basename.
 
     Args:
         basename (str): The basename for all the files we need to read.
             In particular the following files should exist:
-                - basename + '.acc_fac_pe.txt' (with the acceleration factor)
-                - basename + '.epi_factor.txt' (with the epi factor)
-                - basename + '.echo_spacing.txt' (with the echo spacing in seconds)
+                - basename + '.read_out_time.txt' (with the read out time)
                 - basename + '.phase_enc_dir.txt' (with the phase encode direction, like AP, PA, LR, RL, SI, IS, ...)
 
     Returns:
         dict: A dictionary for use in the nipype workflow 'all_peb_pipeline'. It contains the keys:
-            - echospacing (the echo spacing)
-            - acc_factor (the acceleration factor)
+            - read_out_time (the read out time of the scan)
             - enc_dir (the phase encode direction, converted to nipype standards (x, -x, y, -y, ...))
-            - epi_factor (the epi factor)
     """
-    with open(item_basename + '.acc_fac_pe.txt', 'r') as f:
-        acc_factor = float(f.read())
-
-    with open(item_basename + '.epi_factor.txt', 'r') as f:
-        epi_factor = float(f.read())
-
-    with open(item_basename + '.echo_spacing.txt', 'r') as f:
-        echo_spacing = float(f.read())
+    with open(item_basename + '.read_out_times.txt', 'r') as f:
+        read_out_time = float(f.read())
 
     with open(item_basename + '.phase_enc_dir.txt', 'r') as f:
         phase_encoding = f.read()
@@ -69,10 +69,8 @@ def read_epi_params(item_basename):
                                 'LR': 'x-', 'RL': 'x', 'SD': 'x-', 'DS': 'x',
                                 'SI': 'z-', 'IS': 'z', 'HF': 'z-', 'FH': 'z'}
 
-    return {'echospacing': echo_spacing,
-            'acc_factor': acc_factor,
-            'enc_dir': phase_enc_dirs_translate[phase_encoding],
-            'epi_factor': epi_factor}
+    return {'read_out_time': read_out_time,
+            'enc_dir': phase_enc_dirs_translate[phase_encoding]}
 
 
 def _write_output_files(input_bname, output_dir, output_name):

@@ -1,6 +1,6 @@
 import os
 import re
-from mri_tools.scanner_settings.parsers.siemens import PrismaXMLParser, InfoReader
+from mri_tools.scanner_settings.parsers.siemens import PrismaInfoReader
 
 __author__ = 'Robbert Harms'
 __date__ = "2015-05-04"
@@ -11,10 +11,8 @@ __email__ = "robbert.harms@maastrichtuniversity.nl"
 settings_file = '/home/robbert/programming/python/mdt/bin/multite_20150417_alard/20150417_RobbertMultiTE.xml'
 uncorrected_dir = '/home/robbert/programming/python/mdt/bin/multite_20150417_alard/1_uncorrected/'
 
-info_reader = InfoReader(PrismaXMLParser(), settings_file)
-epi_factors = info_reader.get_epi_factor()
-echo_spacings = info_reader.get_echo_spacing()
-accel_factors = info_reader.get_accel_factor_pe()
+info_reader = PrismaInfoReader(settings_file)
+read_out_times = info_reader.get_read_out_time()
 
 
 def write_values(value_dict, output_dir, extension):
@@ -24,6 +22,4 @@ def write_values(value_dict, output_dir, extension):
         with open(os.path.join(output_dir, session_name + extension), 'w') as f:
             f.write(str(value))
 
-write_values(epi_factors, uncorrected_dir, '.epi_factor.txt')
-write_values(echo_spacings, uncorrected_dir, '.echo_spacing.txt')
-write_values(accel_factors, uncorrected_dir, '.acc_fac_pe.txt')
+write_values(read_out_times, uncorrected_dir, '.read_out_times.txt')

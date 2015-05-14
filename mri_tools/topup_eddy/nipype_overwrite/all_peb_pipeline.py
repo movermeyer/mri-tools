@@ -8,7 +8,7 @@ import nipype.interfaces.fsl as fsl
 import os
 from nipype.workflows.dmri.fsl.artifacts import _xfm_jacobian, _checkrnum
 from nipype.workflows.dmri.fsl.utils import b0_average, apply_all_corrections, insert_mat, \
-    rotate_bvecs, compute_readout, vsm2warp, extract_bval, recompose_xfm, recompose_dwi, _checkinitxfm, enhance
+    rotate_bvecs, vsm2warp, extract_bval, recompose_xfm, recompose_dwi, _checkinitxfm, enhance
 
 
 __author__ = 'Robbert Harms'
@@ -21,18 +21,15 @@ __email__ = "robbert.harms@maastrichtuniversity.nl"
 
 The idea is that at a low level two functions did not work correctly. To enable nipype to use the fixed versions of
 these functions we have to copy the entire chain to make it work.
+
+Also, the original implementation calculated the read out times from the EPI parameters. This implementation requires
+you to predefine the read out times.
 """
 
 
 def all_peb_pipeline(name='hmc_sdc_ecc',
-                     epi_params=dict(echospacing=0.77e-3,
-                                     acc_factor=3,
-                                     enc_dir='y-',
-                                     epi_factor=1),
-                     altepi_params=dict(echospacing=0.77e-3,
-                                        acc_factor=3,
-                                        enc_dir='y',
-                                        epi_factor=1)):
+                     epi_params={'read_out_times': None, 'enc_dir': 'y-'},
+                     altepi_params={'read_out_times': None, 'enc_dir': 'y'}):
     """
     Builds a pipeline including three artifact corrections: head-motion
     correction (HMC), susceptibility-derived distortion correction (SDC),
@@ -335,14 +332,8 @@ head-motion correction)
 
 
 def sdc_peb(name='peb_correction',
-            epi_params=dict(echospacing=0.77e-3,
-                            acc_factor=3,
-                            enc_dir='y-',
-                            epi_factor=1),
-            altepi_params=dict(echospacing=0.77e-3,
-                               acc_factor=3,
-                               enc_dir='y',
-                               epi_factor=1)):
+            epi_params={'read_out_times': None, 'enc_dir': 'y-'},
+            altepi_params={'read_out_times': None, 'enc_dir': 'y'}):
     """
     SDC stands for susceptibility distortion correction. PEB stands for
     phase-encoding-based.
@@ -400,9 +391,9 @@ def sdc_peb(name='peb_correction',
     topup.inputs.encoding_direction = [epi_params['enc_dir'],
                                        altepi_params['enc_dir']]
 
-    readout = compute_readout(epi_params)
+    readout = epi_params['read_out_time']
     topup.inputs.readout_times = [readout,
-                                  compute_readout(altepi_params)]
+                                  altepi_params['read_out_time']]
 
     unwarp = pe.Node(fsl.ApplyTOPUP(in_index=[1], method='jac'), name='unwarp')
 
