@@ -47,7 +47,7 @@ def create_mask_from_mean_unweighted(item_dir, item):
     os.rename(out_file + '_mask.nii.gz', out_file + '.nii.gz')
 
 
-def find_unweighted_indices(bvec_file, bval_file, column_based='auto', unweighted_threshold=25.0):
+def find_unweighted_indices(bvec_file, bval_file, column_based='auto', unweighted_threshold=300.0):
     """Find the unweighted indices from a bvec and bval file.
 
     If column_based
@@ -71,7 +71,7 @@ def find_unweighted_indices(bvec_file, bval_file, column_based='auto', unweighte
     bval = np.expand_dims(np.genfromtxt(bval_file), axis=1)
 
     if len(bvec.shape) < 2:
-        raise ValueError('Bval file does not have enough dimensions.')
+        raise ValueError('Bvec file does not have enough dimensions.')
 
     if column_based == 'auto':
         if bvec.shape[1] > bvec.shape[0]:

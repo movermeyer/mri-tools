@@ -18,7 +18,7 @@ def coregister(items, input_dir, tmp_dir, output_dir, reference_item=None):
     This will output all the volumes corrected separately and one with all items combined.
 
     Args:
-        items (list of str): The list of base names of the items, should contain at least an image, bval and bvec.
+        items (list of str): The list of base names of the items, should contain at least an image, bval and bvec file.
         input_dir (str): the input directory
         tmp_dir (str): the temporary files location
         output_dir (str): the location of the output files
