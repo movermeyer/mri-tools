@@ -12,6 +12,31 @@ __maintainer__ = "Robbert Harms"
 __email__ = "robbert.harms@maastrichtuniversity.nl"
 
 
+def collect_mdt_output_maps(input_dir, model_name='Tensor', map_name='Tensor.FA'):
+    """Collect maps from MDT batch fitting output.
+
+    This assumes that all the subjects have their own directory and in that directory are for each model the results
+    of the model fitting:
+        <input_dir>/<subject_id>/<model_name>/<map_name>.nii.gz
+
+    Such a directory structure is generally obtained by running 'mdt.collect_batch_fit_output()' after batch fitting.
+
+    Args:
+        input_dir (str): the input dir to use (see above).
+        model_name (str): the model to use per subject
+        map_name (str): the map to use in the given model dir as FA map
+
+    Returns:
+        dict: mapping subject id to map name
+    """
+    maps = {}
+    for subject in sorted(os.listdir(input_dir)):
+        full_path = os.path.join(input_dir, subject)
+        if os.path.isdir(full_path):
+            maps.update({subject: os.path.join(full_path, model_name, map_name + '.nii.gz')})
+    return maps
+
+
 def create_mask_from_mean_unweighted(item_dir, item):
     """Creates a brain mask from the mean of the unweighted volumes.
 
