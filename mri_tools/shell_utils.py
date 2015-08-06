@@ -34,6 +34,7 @@ def get_fsl_path():
     fsl_path = os.environ.get('FSLDIR', '')
     if not fsl_path:
         raise EnvironmentError('The Environment variable FSLDIR is not set')
+    return fsl_path
 
 
 def get_fsl_command(application_name):

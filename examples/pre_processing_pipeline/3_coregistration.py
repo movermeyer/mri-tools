@@ -1,4 +1,4 @@
-from mri_tools.coregistration.dmri import coregister
+from mri_tools.coregistration.coregister import coregister
 
 __author__ = 'Robbert Harms'
 __date__ = "2015-05-14"

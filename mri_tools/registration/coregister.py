@@ -5,7 +5,6 @@ import nipype.interfaces.fsl as fsl
 import shutil
 from mri_tools.common import create_mean_volumes, write_unweighted, combine_volumes
 
-
 __author__ = 'Robbert Harms'
 __date__ = "2015-05-14"
 __maintainer__ = "Robbert Harms"

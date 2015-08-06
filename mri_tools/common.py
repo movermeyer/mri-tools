@@ -182,3 +182,54 @@ def combine_volumes(item_list, out_dwi_fname, out_bvec_fname, out_bval_fname):
 
     combined_image = np.concatenate(images, axis=3)
     nib.Nifti1Image(combined_image, None, header).to_filename(out_dwi_fname)
+
+
+def multiply_volumes(volumes, out_dwi_fname, recalculate=True):
+    """Multiplies the given volumes and puts the results in the output image.
+
+    Args:
+        item_list (list of str): The list with paths to the images we would like to multiply
+        out_dwi_fname (str): The filename to store the output dwi file with multiplied result volume
+        recalculate (boolean): if False we will not recalculate if the output file exists
+    """
+    if not recalculate and os.path.isfile(out_dwi_fname):
+        return
+
+    header = None
+    result_img = None
+    for volume in volumes:
+        nib_container = nib.load(volume)
+        header = header or nib_container.get_header()
+
+        if result_img is None:
+            result_img = nib_container.get_data()
+        else:
+            result_img *= nib_container.get_data()
+
+    if not os.path.isdir(os.path.dirname(out_dwi_fname)):
+        os.makedirs(os.path.dirname(out_dwi_fname))
+
+    nib.Nifti1Image(result_img, None, header).to_filename(out_dwi_fname)
+
+
+def merge_csv(csv_region_files, output_file, delimiter=',', recalculate=True):
+    """Per region of interest a CSV file which we will concatenate row based.
+
+    This is meant to be used on the output of 'extract_regions()'. This merges all the regions into one large file.
+
+    The columns are the subjects, the rows are the voxels of all the ROIs.
+
+    Args:
+        csv_region_files (list): the roi files we will concatenate
+        output_file (str): the location of the output file
+        delimeter (str): the delimiter to use for reading and writing the csv
+        recalculate (boolean): if False we return if all the files exist.
+    """
+    if not os.path.isdir(os.path.dirname(output_file)):
+        os.makedirs(os.path.dirname(output_file))
+
+    if not recalculate and os.path.isfile(output_file):
+        return
+
+    regions = np.hstack([np.genfromtxt(roi, delimiter=delimiter) for roi in csv_region_files])
+    np.savetxt(output_file, regions, delimiter=delimiter)
