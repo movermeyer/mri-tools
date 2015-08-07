@@ -91,7 +91,7 @@ def extract_regions(input_image, regions, output_dir, recalculate=True):
 
     return data_fnames, header_fnames
 
-
+#todo we can make this an iterator
 def get_regions_info(wmpm_image, labels_file=None, ignore_regions=(0,)):
     """Get information about the white matter parcellation regions.
 
