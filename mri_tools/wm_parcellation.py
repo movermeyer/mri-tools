@@ -26,8 +26,8 @@ def mean_and_std(values):
 def apply_func_to_roi_subjects(csv_region_files, func, output_dir, recalculate=True):
     """Maps a function to every roi and every subject.
 
-    The function should accept as input a single ndarray representing all the voxel values for a single ROI of a single
-    person. The output should be a ndarray with values.
+    The callback function should accept as input a single ndarray representing all the voxel values for a
+    single ROI of a single person. The output of the callback function should be a ndarray with values.
 
     Args:
         csv_region_files (list): the roi files to apply the function to, should contain the key 'data' per list item.
@@ -66,7 +66,7 @@ def extract_regions(input_image, regions, output_dir, recalculate=True):
         recalculate (boolean): if False we return if all the files exist.
 
     Returns:
-        dict: the names of the output files indexed by region id.
+        tuple: two lists, one for the filenames of the data files, the other for the filenames of the header files.
     """
     data = nib.load(input_image).get_data()
 

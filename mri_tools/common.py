@@ -12,7 +12,7 @@ __maintainer__ = "Robbert Harms"
 __email__ = "robbert.harms@maastrichtuniversity.nl"
 
 
-def collect_mdt_output_maps(input_dir, model_name='Tensor', map_name='Tensor.FA'):
+def collect_mdt_output_maps(input_dir, model_name, map_name):
     """Collect maps from MDT batch fitting output.
 
     This assumes that all the subjects have their own directory and in that directory are for each model the results
@@ -212,15 +212,11 @@ def multiply_volumes(volumes, out_dwi_fname, recalculate=True):
     nib.Nifti1Image(result_img, None, header).to_filename(out_dwi_fname)
 
 
-def merge_csv(csv_region_files, output_file, delimiter=',', recalculate=True):
-    """Per region of interest a CSV file which we will concatenate row based.
-
-    This is meant to be used on the output of 'extract_regions()'. This merges all the regions into one large file.
-
-    The columns are the subjects, the rows are the voxels of all the ROIs.
+def merge_csv(csv_input_files, output_file, delimiter=',', recalculate=True):
+    """List of CSV files which we will concatenate row based.
 
     Args:
-        csv_region_files (list): the roi files we will concatenate
+        csv_input_files (list): the roi files we will concatenate
         output_file (str): the location of the output file
         delimeter (str): the delimiter to use for reading and writing the csv
         recalculate (boolean): if False we return if all the files exist.
@@ -231,5 +227,5 @@ def merge_csv(csv_region_files, output_file, delimiter=',', recalculate=True):
     if not recalculate and os.path.isfile(output_file):
         return
 
-    regions = np.hstack([np.genfromtxt(roi, delimiter=delimiter) for roi in csv_region_files])
+    regions = np.hstack([np.genfromtxt(roi, delimiter=delimiter) for roi in csv_input_files])
     np.savetxt(output_file, regions, delimiter=delimiter)

@@ -37,7 +37,7 @@ def run_tbss(fa_maps, output_dir, recalculate=True):
 
     if not recalculate:
         try:
-            return _get_tbss_info_dict(fa_maps, output_dir)
+            return get_tbss_info_dict(fa_maps, output_dir)
         except RuntimeError:
             pass
 
@@ -65,7 +65,41 @@ def run_tbss(fa_maps, output_dir, recalculate=True):
                                        ])])
     wf.run(plugin='MultiProc')
 
-    return _get_tbss_info_dict(fa_maps, output_dir)
+    return get_tbss_info_dict(fa_maps, output_dir)
+
+
+def get_tbss_info_dict(fa_maps, tbss_output_dir):
+    """Get the output from the TBSS calculations.
+
+    Args:
+        fa_maps (dict): mapping subjects to fa map file names
+        output_dir (str): the output directory
+
+    Returns:
+        dict: dictionary mapping subjects to output files. This can be used as input to run_tbss_non_FA.
+            The dictionary contains:
+                - distance_map: single nii.gz
+                - group_mask: single nii.gz
+                - mean_fa: single nii.gz
+                - merge_fa: single nii.gz
+                - projected_fa: single nii.gz
+                - skeleton_mask: single nii.gz
+                - field_list: dict with per subject field list (the warp file)
+
+    Raises:
+        RuntimeError: if one of the output images could not be found.
+    """
+    subject_list = sorted(fa_maps.keys())
+
+    single_output_items = ['distance_map', 'group_mask', 'mean_fa', 'merge_fa', 'projected_fa', 'skeleton_mask']
+    info_dict = {m: _first_img_in_dir(os.path.join(tbss_output_dir, m)) for m in single_output_items}
+
+    info_dict.update(
+        {'field_list': {subject: _first_img_in_dir(os.path.join(tbss_output_dir, 'field_list2', '_fnirt' + repr(i)))
+                        for i, subject in enumerate(subject_list)}}
+    )
+
+    return info_dict
 
 
 def run_tbss_non_FA(tbss_info_dict, maps, output_dir, output_name='non_fa', recalculate=True):
@@ -126,35 +160,3 @@ def _first_img_in_dir(directory):
     return niftis[0]
 
 
-def _get_tbss_info_dict(fa_maps, tbss_output_dir):
-    """Get the output from the TBSS calculations.
-
-    Args:
-        fa_maps (dict): mapping subjects to fa map file names
-        output_dir (str): the output directory
-
-    Returns:
-        dict: dictionary mapping subjects to output files. This can be used as input to run_tbss_non_FA.
-            The dictionary contains:
-                - distance_map: single nii.gz
-                - group_mask: single nii.gz
-                - mean_fa: single nii.gz
-                - merge_fa: single nii.gz
-                - projected_fa: single nii.gz
-                - skeleton_mask: single nii.gz
-                - field_list: dict with per subject field list (the warp file)
-
-    Raises:
-        RuntimeError: if one of the output images could not be found.
-    """
-    subject_list = sorted(fa_maps.keys())
-
-    single_output_items = ['distance_map', 'group_mask', 'mean_fa', 'merge_fa', 'projected_fa', 'skeleton_mask']
-    info_dict = {m: _first_img_in_dir(os.path.join(tbss_output_dir, m)) for m in single_output_items}
-
-    info_dict.update(
-        {'field_list': {subject: _first_img_in_dir(os.path.join(tbss_output_dir, 'field_list2', '_fnirt' + repr(i)))
-                        for i, subject in enumerate(subject_list)}}
-    )
-
-    return info_dict

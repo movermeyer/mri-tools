@@ -11,7 +11,7 @@ __email__ = "robbert.harms@maastrichtuniversity.nl"
 def apply_warp(in_file, ref_file, field_file, output_dir, recalculate=False, **kwargs):
     """Wrapper for the Nipype FSL applywarp wrapper.
 
-    Please remember to set the kwarg interp='nn' if you are warping a file with ROI's.
+    Please remember to set the kwarg interp='nn' if you are warping a file with discrete ROI's.
 
     Args:
         in_file: image to be warped
@@ -23,12 +23,14 @@ def apply_warp(in_file, ref_file, field_file, output_dir, recalculate=False, **k
         **kwargs: extra arguments for the Nipype FSL applywarp
 
     Returns:
-        str: the path to the output image.
+        dict: location of the output files:
+            - warped_image: the path to the output image.
     """
     output_file = os.path.join(output_dir, 'warped_' + os.path.basename(in_file))
+    output = {'warped_image': output_file}
 
     if not recalculate and os.path.isfile(output_file):
-        return output_file
+        return output
 
     aw = fsl.ApplyWarp(**kwargs)
     aw.inputs.in_file = in_file
@@ -40,4 +42,4 @@ def apply_warp(in_file, ref_file, field_file, output_dir, recalculate=False, **k
     applywarp.base_dir = os.path.join(output_dir, '_nipype_work_dir')
     applywarp.run()
 
-    return output_file
+    return output
