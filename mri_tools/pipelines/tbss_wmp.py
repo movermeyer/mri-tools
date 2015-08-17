@@ -3,7 +3,8 @@ import os
 import itertools
 import numpy as np
 from mri_tools.common import multiply_volumes, merge_csv
-from mri_tools.plots.scatter import SimpleScatterData, ScatterPlots, LowerTrianglePlacement
+from mri_tools.plots.scatter import SimpleScatterData, ScatterPlots, LowerTrianglePlacement, MultiDimensionalScatterData, \
+    ScatterDataInfo
 from mri_tools.registration.common import apply_warp
 from mri_tools.registration.register_atlas import register_atlas
 from mri_tools.shell_utils import get_fsl_path
@@ -275,14 +276,13 @@ class CSVOutputInfo(object):
                     column_info.append(row[2] + ' (' + row[3] + ')')
 
         scatter_data_list = []
-
         for map_names in itertools.combinations(map_names, r=2):
             data = []
             labels = []
             for map_name in map_names:
                 path = os.path.join(self._base_dir, map_name + '.csv')
                 csv_data = np.genfromtxt(path, delimiter=',')
-                data.append(csv_data[:, column])
+                data.append(csv_data)
                 labels.append(map_name)
 
             arg_list = []
@@ -290,7 +290,9 @@ class CSVOutputInfo(object):
             arg_list.extend(labels)
             arg_list.append(' - '.join(labels))
 
-            scatter_data_list.append(SimpleScatterData(*arg_list))
+            scatter_data_list.append(MultiDimensionalScatterData(*arg_list))
 
-        plots = ScatterPlots(scatter_data_list, placement=LowerTrianglePlacement(4))
-        plots.show(display_titles=False, window_title=column_info[column], suptitle=column_info[column])
+        scatter_info = ScatterDataInfo(scatter_data_list, column_info, column, len(column_info))
+
+        plots = ScatterPlots(scatter_info, placement=LowerTrianglePlacement(4))
+        plots.show(dimension=column, show_titles=False)
