@@ -4,7 +4,8 @@ from mri_tools.registration.common import apply_warp
 from mri_tools.registration.register_atlas import register_atlas
 from mri_tools.shell_utils import get_fsl_path
 from mri_tools.tbss.tbss import run_tbss, get_tbss_info_dict, run_tbss_non_FA
-from mri_tools.wm_parcellation import get_regions_info, extract_regions, apply_func_to_roi_subjects, mean_and_std
+from mri_tools.wm_parcellation import write_regions, apply_aggregate_to_roi_subjects, \
+    MeanAndStdaggregate, RegionsInfo
 
 __author__ = 'Robbert Harms'
 __date__ = "2015-08-11"
@@ -14,7 +15,7 @@ __email__ = "robbert.harms@maastrichtuniversity.nl"
 
 class TBSS_WMP(object):
 
-    def __init__(self, fa_maps, output_dir, work_dir, additional_maps, wm_atlas_info=None, region_statistic_func=None):
+    def __init__(self, fa_maps, output_dir, work_dir, additional_maps, wm_atlas_info=None, region_statistic=None):
         """This class first runs TBSS and then performs White matter parcellation on the white matter tracts.
 
         The final output is a CSV file with for all the maps the mean and std of each white matter region in the given
@@ -48,16 +49,15 @@ class TBSS_WMP(object):
                     fa: /fsl/path/to/JHU-ICBM-FA-1mm.nii.gz
                     wmpm: /fsl/path/to/JHU-ICBM-labels-1mm.nii.gz
                     labels: /fsl/path/to/JHU-labels.xml
-            region_statistic_func (python function): the python function we will apply on each of the ROIs of each of
-                the subjects. If None we calculate the mean and std. of each ROI. See
-                mri_tools.wm_parcellation.apply_func_to_roi_subjects for more information.
+            region_statistic (ROIAggregate): the aggregate object we will apply on each of the ROIs of each of
+                the subjects. If None we calculate the mean and std. of each ROI.
         """
         self._fa_maps = fa_maps
         self._output_dir = output_dir
         self._work_dir = work_dir
         self._recalculate = True
         self._additional_maps = additional_maps
-        self._region_statistic_function = region_statistic_func or mean_and_std
+        self._region_statistic = region_statistic or MeanAndStdaggregate()
 
         if wm_atlas_info is None:
             self._wm_atlas_info = {
@@ -74,7 +74,7 @@ class TBSS_WMP(object):
             'atlas_registration': os.path.join(self._work_dir, '3_registered_atlas'),
             'wmpm_registration': os.path.join(self._work_dir, '4_warped_wmpm'),
             'region_csv': os.path.join(self._work_dir, '6_rois'),
-            'region_aggregrates': os.path.join(self._work_dir, '7_rois_aggregrates')
+            'region_aggregates': os.path.join(self._work_dir, '7_rois_aggregates')
         }
 
         self._output_files = {
@@ -94,10 +94,10 @@ class TBSS_WMP(object):
         atlas_info_dict = self._register_atlas(tbss_info_dict)
         warped_wmpm = self._warp_wmpm(tbss_info_dict, atlas_info_dict)
         wmpm_skeleton = self._create_wmpm_skeleton(tbss_info_dict, warped_wmpm)
-        wm_regions = self._get_wm_regions(wmpm_skeleton)
+        wm_regions_info = RegionsInfo(wmpm_skeleton, labels_file=self._wm_atlas_info['labels'])
         skeletons = self._get_wm_skeleton_files(tbss_info_dict, additional_map_results)
-        regions_files_per_map = self._write_region_files(skeletons, wm_regions)
-        self._write_output_csv(regions_files_per_map)
+        regions_files_per_map = self._write_region_files(skeletons, wm_regions_info)
+        self._write_output_csv(regions_files_per_map, wm_regions_info)
 
     def _run_tbss(self):
         """Runs TBSS on the FA maps.
@@ -168,17 +168,6 @@ class TBSS_WMP(object):
                          recalculate=False)
         return self._output_files['wmpm_skeleton']
 
-    def _get_wm_regions(self, wmpm_skeleton):
-        """Get all the (labelled) regions from the white matter skeleton.
-
-        Args:
-            wmpm_skeleton (str): the location of the white matter parcellation skeleton file.
-
-        Returns:
-            dict: information about the regions.
-        """
-        return get_regions_info(wmpm_skeleton, labels_file=self._wm_atlas_info['labels'])
-
     def _get_wm_skeleton_files(self, tbss_info_dict, additional_map_results):
         """Get a dictionary with the names and the locations of all the skeleton files.
 
@@ -189,12 +178,12 @@ class TBSS_WMP(object):
         skeletons.update(additional_map_results)
         return skeletons
 
-    def _write_region_files(self, skeleton_files, regions):
+    def _write_region_files(self, skeleton_files, wm_regions_info):
         """Write the CSV files with the regions information for all of the skeletons.
 
         Args:
-            skeleton_files (dict): output from _get_wm_skeleton_files
-            regions (dict): output from _get_wm_regions
+            skeleton_files (dict):  a dictionary with the names and the locations of all the skeleton files.
+            wm_regions_info (RegionsInfo): the regions info class
 
         Returns:
             dict: mapping map names to list of CSV region files
@@ -202,7 +191,7 @@ class TBSS_WMP(object):
         regions_files_per_map = {}
         for map_name, skeleton_file in skeleton_files.items():
             output_dir = os.path.join(self._output_dirs['region_csv'], map_name)
-            csv_data_files, _ = extract_regions(skeleton_file, regions, output_dir, recalculate=False)
+            csv_data_files = write_regions(skeleton_file, wm_regions_info, output_dir, recalculate=False)
 
             csv_regions_merged = os.path.join(output_dir, 'all.csv')
             merge_csv(csv_data_files, csv_regions_merged, recalculate=False)
@@ -211,15 +200,44 @@ class TBSS_WMP(object):
 
         return regions_files_per_map
 
-    def _write_output_csv(self, regions_files_per_map):
+    def _write_output_csv(self, regions_files_per_map, wm_regions_info):
         """Apply the callback function to the ROIs to calculate the statistics and write the results.
 
         Args:
-            skeleton_files (dict): output from _get_wm_skeleton_files
+            skeleton_files (dict): a dictionary with the names and the locations of all the skeleton files.
+            wm_regions_info (RegionsInfo): the regions info class
         """
         for map_name, region_files in regions_files_per_map.items():
-            output_dir = os.path.join(self._output_dirs['region_aggregrates'], map_name)
-            aggregrates_csv = apply_func_to_roi_subjects(region_files, self._region_statistic_function,
-                                                         output_dir, recalculate=False)
-            aggregrates_csv_fname = os.path.join(self._output_dir, map_name + '.csv')
-            merge_csv(aggregrates_csv, aggregrates_csv_fname, recalculate=True)
+            output_dir = os.path.join(self._output_dirs['region_aggregates'], map_name)
+            aggregates_csv = apply_aggregate_to_roi_subjects(region_files, self._region_statistic,
+                                                             output_dir, recalculate=False)
+            aggregates_csv_fname = os.path.join(self._output_dir, map_name + '.csv')
+            merge_csv(aggregates_csv, aggregates_csv_fname, recalculate=True)
+
+        self._write_output_labels(wm_regions_info, recalculate=self._recalculate)
+
+    def _write_output_labels(self, wm_regions_info, recalculate=True):
+        """Write the file with the regions names.
+
+        Args:
+            wm_regions_info (RegionsInfo): the regions info class
+        """
+        output_file = os.path.join(self._output_dir, 'column_names.txt')
+
+        if not recalculate and os.path.isfile(output_file):
+            return output_file
+
+        regions_labels = wm_regions_info.get_labels_region_listing()
+        aggregate_names = self._region_statistic.get_column_names()
+
+        columns = ['# column_index, region_id, label, aggregrate_column' + "\n"]
+        ind = 0
+        for region, label in regions_labels:
+            for ag_name in aggregate_names:
+                columns.append(str(ind) + ', ' + str(region) + ', ' + label + ', ' + ag_name + "\n")
+                ind += 1
+
+        with open(output_file, 'w') as f:
+            f.writelines(columns)
+
+        return output_file

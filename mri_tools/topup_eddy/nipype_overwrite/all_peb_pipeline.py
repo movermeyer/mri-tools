@@ -442,7 +442,7 @@ def hmc_split(in_file, in_bval, ref_num=0, lowbval=25.0):
 
     im = nb.load(in_file)
     data = im.get_data()
-    hdr = im.get_header().copy()
+    hdr = im.get_column_names().copy()
     bval = np.loadtxt(in_bval)
 
     lowbs = np.where(bval <= lowbval)[0]
