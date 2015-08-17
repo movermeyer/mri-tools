@@ -1,5 +1,9 @@
+import csv
 import os
+import itertools
+import numpy as np
 from mri_tools.common import multiply_volumes, merge_csv
+from mri_tools.plots.scatter import SimpleScatterData, ScatterPlots, LowerTrianglePlacement
 from mri_tools.registration.common import apply_warp
 from mri_tools.registration.register_atlas import register_atlas
 from mri_tools.shell_utils import get_fsl_path
@@ -222,7 +226,7 @@ class TBSS_WMP(object):
         Args:
             wm_regions_info (RegionsInfo): the regions info class
         """
-        output_file = os.path.join(self._output_dir, 'column_names.txt')
+        output_file = os.path.join(self._output_dir, 'column_info.txt')
 
         if not recalculate and os.path.isfile(output_file):
             return output_file
@@ -230,14 +234,63 @@ class TBSS_WMP(object):
         regions_labels = wm_regions_info.get_labels_region_listing()
         aggregate_names = self._region_statistic.get_column_names()
 
-        columns = ['# column_index, region_id, label, aggregrate_column' + "\n"]
+        columns = ['# column_index,region_id,label,aggregrate_column' + "\n"]
         ind = 0
         for region, label in regions_labels:
             for ag_name in aggregate_names:
-                columns.append(str(ind) + ', ' + str(region) + ', ' + label + ', ' + ag_name + "\n")
+                columns.append(str(ind) + ',' + str(region) + ',"' + label + '","' + ag_name + '"' + "\n")
                 ind += 1
 
         with open(output_file, 'w') as f:
             f.writelines(columns)
 
         return output_file
+
+
+class CSVOutputInfo(object):
+
+    def __init__(self, base_dir):
+        """Functions for displaying the CSV output in various ways.
+
+        Args;
+            base_dir (str): the directory containing the CSV files
+        """
+        self._base_dir = base_dir
+
+    def show_scatter_plot_combinations(self, map_names, column):
+        """Show the scatter plots of all the combinations of the given maps.
+
+        Args:
+            map_names (list of str): the list of map names we want to use for the scatterplots. It is supposed
+                that the CSV files are in the base dir and have the extension .csv
+            column (int): the column we want to show
+        """
+        column_info = []
+        column_info_file = os.path.join(self._base_dir, 'column_info.txt')
+        if os.path.isfile(column_info_file):
+            with open(column_info_file) as f:
+                start = itertools.dropwhile(lambda l: l.lower().lstrip().startswith('#'), f)
+                column_reader = csv.reader(start, delimiter=',', quotechar='"')
+                for row in column_reader:
+                    column_info.append(row[2] + ' (' + row[3] + ')')
+
+        scatter_data_list = []
+
+        for map_names in itertools.combinations(map_names, r=2):
+            data = []
+            labels = []
+            for map_name in map_names:
+                path = os.path.join(self._base_dir, map_name + '.csv')
+                csv_data = np.genfromtxt(path, delimiter=',')
+                data.append(csv_data[:, column])
+                labels.append(map_name)
+
+            arg_list = []
+            arg_list.extend(data)
+            arg_list.extend(labels)
+            arg_list.append(' - '.join(labels))
+
+            scatter_data_list.append(SimpleScatterData(*arg_list))
+
+        plots = ScatterPlots(scatter_data_list, placement=LowerTrianglePlacement(4))
+        plots.show(display_titles=False, window_title=column_info[column], suptitle=column_info[column])
