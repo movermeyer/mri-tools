@@ -179,7 +179,7 @@ class ScatterDataInfo(object):
         dimension = dimension or self._default_dimension
         return self._scatter_data_list[plot_ind].get_title(dimension=dimension)
 
-
+#todo use GridLayout from MDT.visualization
 class PlacementInterface(object):
 
     def get_axis(self, index, nmr_plots):
@@ -300,10 +300,10 @@ class ScatterPlots(object):
 
         if self._show_sliders:
             ax = self._figure.add_axes([0.25, 0.008, 0.5, 0.01], axisbg='Wheat')
-            self._dimension_slider = _DiscreteSlider(ax, 'Volume', 0,
-                                                  self._scatter_info.get_nmr_dimensions() - 1,
-                                                  valinit=self.dimension,
-                                                  valfmt='%i', color='DarkSeaGreen', closedmin=True, closedmax=False)
+            self._dimension_slider = _DiscreteSlider(
+                ax, 'Volume', 0, self._scatter_info.get_nmr_dimensions() - 1,
+                valinit=self.dimension, valfmt='%i', color='DarkSeaGreen', closedmin=True, closedmax=False)
+
             self._dimension_slider.on_changed(self.set_dimension)
 
         self._rerender_maps()
