@@ -1,3 +1,4 @@
+import csv
 import glob
 import os
 import xml.etree.ElementTree as ET
@@ -123,22 +124,38 @@ def apply_aggregate_to_roi_subjects(csv_region_files, roi_aggregate, output_dir,
         map(os.remove, glob.glob(os.path.join(output_dir, '*')))
 
     for ind, roi in enumerate(csv_region_files):
+        # read comment
         with open(roi, 'r') as f:
-            comment = f.next()
-            if comment[0] == '#':
-                comment = comment[1:]
-            else:
+            comment = next(f)
+            if comment[0] != '#':
                 comment = ''
 
+        # read data
         data = np.genfromtxt(roi, delimiter=',')
-        output = [roi_aggregate.aggregate(data[i]) for i in range(data.shape[0])]
-        header = comment + '"' + ', '.join(roi_aggregate.get_column_names()) + '"'
-        np.savetxt(data_fnames[ind], output, delimiter=',', header=header)
+        data = data[:, 1:]
+
+        # read subject ids. There is probably a more optimal way here. It is late though.
+        subjects_list = []
+        with open(roi, 'rb') as csvfile:
+            csv_reader = csv.reader(csvfile, delimiter=',', quotechar='"')
+            for row in csv_reader:
+                if row[0][0] != '#':
+                    subjects_list.append(row[0])
+
+        with open(data_fnames[ind], 'w') as f:
+            f.write(comment)
+            f.write('# "subject_id, ' + ', '.join(roi_aggregate.get_column_names()) + '"\n')
+
+            output = [roi_aggregate.aggregate(data[i]) for i in range(data.shape[0])]
+
+            for subject_ind, subject_id in enumerate(subjects_list):
+                f.write('"' + str(subject_id) + '",')
+                np.savetxt(f, np.array(output[subject_ind])[None], delimiter=",")
 
     return data_fnames
 
 
-def write_regions(input_image, wm_regions_info, output_dir, recalculate=True):
+def write_regions(input_image, subjects_list, wm_regions_info, output_dir, recalculate=True):
     """Extract the voxel information for all the subjects for all the regions.
 
     This will write a series of csv files for every ROI.
@@ -146,6 +163,7 @@ def write_regions(input_image, wm_regions_info, output_dir, recalculate=True):
     Args:
         input_image (str): the location of the input image. This is assumed to be a 4d file containing
             per subject (the 4th dimension) a 3d matrix (the first three dimensions) with subject data.
+        subjects_list (list of str): the list with the ids of the subjects
         wm_regions_info (RegionsInfo): the regions info class
         output_dir (str): output folder
         recalculate (boolean): if False we return if all the files exist.
@@ -169,8 +187,13 @@ def write_regions(input_image, wm_regions_info, output_dir, recalculate=True):
     for ind, (region_id, label) in enumerate(wm_regions_info.get_labels_dict().items()):
         voxel_indices = wm_regions_info.get_voxel_indices(region_id)
         rois_per_subject = np.array([data[..., subject_ind][voxel_indices] for subject_ind in range(data.shape[3])])
-        csv_header = '"Region id: ' + str(region_id) + ', label: ' + label + '"'
-        np.savetxt(data_fnames[ind], rois_per_subject, delimiter=",", header=csv_header)
+
+        with open(data_fnames[ind], 'w') as f:
+            f.write('# "Region id: ' + str(region_id) + ', label: ' + label + '"' + "\n")
+
+            for subject_ind, subject_id in enumerate(subjects_list):
+                f.write('"' + str(subject_id) + '",')
+                np.savetxt(f, rois_per_subject[subject_ind, :][None], delimiter=",")
 
     return data_fnames
 

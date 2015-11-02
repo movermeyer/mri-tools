@@ -230,24 +230,3 @@ def merge_csv(csv_input_files, output_file, delimiter=',', recalculate=True):
 
     regions = np.hstack([np.genfromtxt(roi, delimiter=delimiter) for roi in csv_input_files])
     np.savetxt(output_file, regions, delimiter=delimiter)
-
-
-def generate_threshold_fa_mask(fa_fname, fa_threshold, out_fname):
-    """Thresholds the given FA map with the given threshold, write the output to the given filename.
-
-    The idea is to create a simple white matter mask using FA values. Everything below the given threshold will be
-    masked.
-
-    Args:
-        fa_fname (str): the path to the FA file
-        fa_threshold (double): the FA threshold. Everything below this threshold is masked (set to 0). To be precise:
-            where fa_data < fa_threshold set the value to 0.
-        out_fname (str): where to write the outfile.
-    """
-    nib_container = nib.load(fa_fname)
-    fa_data = nib_container.get_data()
-
-    fa_data[fa_data < fa_threshold] = 0
-    fa_data[fa_data > 0] = 1
-
-    nib.Nifti1Image(fa_data, None, nib_container.get_header()).to_filename(out_fname)

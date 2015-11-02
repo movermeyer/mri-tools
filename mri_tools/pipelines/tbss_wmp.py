@@ -58,6 +58,7 @@ class TBSS_WMP(object):
                 the subjects. If None we calculate the mean and std. of each ROI.
         """
         self._fa_maps = fa_maps
+        self._subjects_list = sorted(fa_maps.keys())
         self._output_dir = output_dir
         self._work_dir = work_dir
         self._recalculate = True
@@ -110,8 +111,8 @@ class TBSS_WMP(object):
         Returns:
             dict: the dictionary with the location of the TBSS results.
         """
-        run_tbss(self._fa_maps, self._output_dirs['tbss'], recalculate=self._recalculate)
-        return get_tbss_info_dict(self._fa_maps, self._output_dirs['tbss'])
+        run_tbss(self._fa_maps, self._subjects_list, self._output_dirs['tbss'], recalculate=self._recalculate)
+        return get_tbss_info_dict(self._fa_maps, self._subjects_list, self._output_dirs['tbss'])
 
     def _run_tbss_non_FA(self, tbss_info_dict):
         """Run TBSS on non FA maps. Uses the TBSS results.
@@ -124,7 +125,8 @@ class TBSS_WMP(object):
         """
         additional_map_results = {}
         for map_name, subjects in self._additional_maps.items():
-            skeleton_fname = run_tbss_non_FA(tbss_info_dict, subjects, self._output_dirs['tbss_non_fa'],
+            skeleton_fname = run_tbss_non_FA(tbss_info_dict, subjects, self._subjects_list,
+                                             self._output_dirs['tbss_non_fa'],
                                              output_name=map_name, recalculate=self._recalculate)
             additional_map_results.update({map_name: skeleton_fname})
 
@@ -196,10 +198,8 @@ class TBSS_WMP(object):
         regions_files_per_map = {}
         for map_name, skeleton_file in skeleton_files.items():
             output_dir = os.path.join(self._output_dirs['region_csv'], map_name)
-            csv_data_files = write_regions(skeleton_file, wm_regions_info, output_dir, recalculate=False)
-
-            csv_regions_merged = os.path.join(output_dir, 'all.csv')
-            merge_csv(csv_data_files, csv_regions_merged, recalculate=False)
+            csv_data_files = write_regions(skeleton_file, self._subjects_list, wm_regions_info, output_dir,
+                                           recalculate=False)
 
             regions_files_per_map.update({map_name: csv_data_files})
 
@@ -216,8 +216,15 @@ class TBSS_WMP(object):
             output_dir = os.path.join(self._output_dirs['region_aggregates'], map_name)
             aggregates_csv = apply_aggregate_to_roi_subjects(region_files, self._region_statistic,
                                                              output_dir, recalculate=False)
+
             aggregates_csv_fname = os.path.join(self._output_dir, map_name + '.csv')
-            merge_csv(aggregates_csv, aggregates_csv_fname, recalculate=True)
+            regions = np.hstack([np.genfromtxt(roi, delimiter=',')[:, 1:] for roi in aggregates_csv])
+
+            if not os.path.isfile(aggregates_csv_fname):
+                with open(aggregates_csv_fname, 'w') as f:
+                    for subject_ind, subject_id in enumerate(self._subjects_list):
+                        f.write('"' + str(subject_id) + '",')
+                        np.savetxt(f, regions[subject_ind][None], delimiter=',')
 
         self._write_output_labels(wm_regions_info, recalculate=self._recalculate)
 
@@ -235,15 +242,17 @@ class TBSS_WMP(object):
         regions_labels = wm_regions_info.get_labels_region_listing()
         aggregate_names = self._region_statistic.get_column_names()
 
-        columns = ['# column_index,region_id,label,aggregrate_column' + "\n"]
-        ind = 0
+        rows = ['# column_index,region_id,label,aggregrate_column' + "\n",
+                '0,,subject id,\n']
+
+        ind = 1
         for region, label in regions_labels:
             for ag_name in aggregate_names:
-                columns.append(str(ind) + ',' + str(region) + ',"' + label + '","' + ag_name + '"' + "\n")
+                rows.append(str(ind) + ',' + str(region) + ',"' + label + '","' + ag_name + '"' + "\n")
                 ind += 1
 
         with open(output_file, 'w') as f:
-            f.writelines(columns)
+            f.writelines(rows)
 
         return output_file
 
@@ -257,6 +266,7 @@ class CSVOutputInfo(object):
             base_dir (str): the directory containing the CSV files
         """
         self._base_dir = base_dir
+        self._skip_initial_rows = 1
 
     def show_scatter_plot_combinations(self, map_names, column):
         """Show the scatter plots of all the combinations of the given maps.
@@ -271,9 +281,10 @@ class CSVOutputInfo(object):
         if os.path.isfile(column_info_file):
             with open(column_info_file) as f:
                 start = itertools.dropwhile(lambda l: l.lower().lstrip().startswith('#'), f)
-                column_reader = csv.reader(start, delimiter=',', quotechar='"')
-                for row in column_reader:
-                    column_info.append(row[2] + ' (' + row[3] + ')')
+                column_reader = list(csv.reader(start, delimiter=',', quotechar='"'))
+                for row_ind, row in enumerate(column_reader):
+                    if row_ind > self._skip_initial_rows:
+                        column_info.append(row[2] + ' (' + row[3] + ')')
 
         scatter_data_list = []
         for map_names in itertools.combinations(map_names, r=2):
@@ -281,7 +292,7 @@ class CSVOutputInfo(object):
             labels = []
             for map_name in map_names:
                 path = os.path.join(self._base_dir, map_name + '.csv')
-                csv_data = np.genfromtxt(path, delimiter=',')
+                csv_data = np.genfromtxt(path, delimiter=',')[self._skip_initial_rows:]
                 data.append(csv_data)
                 labels.append(map_name)
 

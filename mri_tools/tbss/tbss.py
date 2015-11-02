@@ -13,11 +13,13 @@ __maintainer__ = "Robbert Harms"
 __email__ = "robbert.harms@maastrichtuniversity.nl"
 
 
-def run_tbss(fa_maps, output_dir, recalculate=True):
+def run_tbss(fa_maps, subjects_list, output_dir, recalculate=True):
     """Run TBSS on the given subjects.
 
     Args:
         fa_maps (dict): mapping subjects to fa map file names
+        subjects_list (list of str): the list of subjects names. We provide these to make sure the images are
+            all analyzed in the correct order.
         output_dir (str): the output directory
         recalculate (boolean): if we recalculate if the output already exists. Set this to False to easily get the
             results dictionary.
@@ -37,12 +39,11 @@ def run_tbss(fa_maps, output_dir, recalculate=True):
 
     if not recalculate:
         try:
-            return get_tbss_info_dict(fa_maps, output_dir)
+            return get_tbss_info_dict(fa_maps, subjects_list, output_dir)
         except RuntimeError:
             pass
 
-    subject_list = sorted(fa_maps.keys())
-    fa_list = [fa_maps[subject] for subject in subject_list]
+    fa_list = [fa_maps[subject] for subject in subjects_list]
 
     tbss_all = tbss_workflow.create_tbss_all(estimate_skeleton=False)
     tbss_all.base_dir = work_dir
@@ -65,14 +66,16 @@ def run_tbss(fa_maps, output_dir, recalculate=True):
                                        ])])
     wf.run(plugin='MultiProc')
 
-    return get_tbss_info_dict(fa_maps, output_dir)
+    return get_tbss_info_dict(fa_maps, subjects_list, output_dir)
 
 
-def get_tbss_info_dict(fa_maps, tbss_output_dir):
+def get_tbss_info_dict(fa_maps, subjects_list, tbss_output_dir):
     """Get the output from the TBSS calculations.
 
     Args:
         fa_maps (dict): mapping subjects to fa map file names
+        subjects_list (list of str): the list of subjects names. We provide these to make sure the images are
+            all analyzed in the correct order.
         output_dir (str): the output directory
 
     Returns:
@@ -89,25 +92,25 @@ def get_tbss_info_dict(fa_maps, tbss_output_dir):
     Raises:
         RuntimeError: if one of the output images could not be found.
     """
-    subject_list = sorted(fa_maps.keys())
-
     single_output_items = ['distance_map', 'group_mask', 'mean_fa', 'merge_fa', 'projected_fa', 'skeleton_mask']
     info_dict = {m: _first_img_in_dir(os.path.join(tbss_output_dir, m)) for m in single_output_items}
 
     info_dict.update(
         {'field_list': {subject: _first_img_in_dir(os.path.join(tbss_output_dir, 'field_list2', '_fnirt' + repr(i)))
-                        for i, subject in enumerate(subject_list)}}
+                        for i, subject in enumerate(subjects_list)}}
     )
 
     return info_dict
 
 
-def run_tbss_non_FA(tbss_info_dict, maps, output_dir, output_name='non_fa', recalculate=True):
+def run_tbss_non_FA(tbss_info_dict, maps, subjects_list, output_dir, output_name='non_fa', recalculate=True):
     """Run TBSS non FA on the given subjects.
 
     Args:
         tbss_info_dict (dict): the information dict from 'run_tbss()'.
         maps (dict): mapping subjects to filenames containing the map to register to the FA skeleton.
+        subjects_list (list of str): the list of subjects names. We provide these to make sure the images are
+            all analyzed in the correct order.
         output_dir (str): the output directory
         output_name (str): the name of the output file (without extension)
 
@@ -120,9 +123,8 @@ def run_tbss_non_FA(tbss_info_dict, maps, output_dir, output_name='non_fa', reca
     if not recalculate and os.path.isfile(output_file):
         return output_file
 
-    subject_list = sorted(maps.keys())
-    maps_list = [maps[subject] for subject in subject_list]
-    field_list = [tbss_info_dict['field_list'][subject] for subject in subject_list]
+    maps_list = [maps[subject] for subject in subjects_list]
+    field_list = [tbss_info_dict['field_list'][subject] for subject in subjects_list]
 
     tbss_non_fa = create_tbss_non_FA()
     tbss_non_fa.base_dir = work_dir
