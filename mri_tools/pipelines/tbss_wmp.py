@@ -1,10 +1,6 @@
-import csv
 import os
-import itertools
 import numpy as np
-from mri_tools.common import multiply_volumes, merge_csv
-from mri_tools.plots.scatter import SimpleScatterData, ScatterPlots, LowerTrianglePlacement, MultiDimensionalScatterData, \
-    ScatterDataInfo
+from mri_tools.common import multiply_volumes
 from mri_tools.registration.common import apply_warp
 from mri_tools.registration.register_atlas import register_atlas
 from mri_tools.shell_utils import get_fsl_path
@@ -255,55 +251,3 @@ class TBSS_WMP(object):
             f.writelines(rows)
 
         return output_file
-
-
-class CSVOutputInfo(object):
-
-    def __init__(self, base_dir):
-        """Functions for displaying the CSV output in various ways.
-
-        Args;
-            base_dir (str): the directory containing the CSV files
-        """
-        self._base_dir = base_dir
-        self._skip_initial_rows = 1
-
-    def show_scatter_plot_combinations(self, map_names, column):
-        """Show the scatter plots of all the combinations of the given maps.
-
-        Args:
-            map_names (list of str): the list of map names we want to use for the scatterplots. It is supposed
-                that the CSV files are in the base dir and have the extension .csv
-            column (int): the column we want to show
-        """
-        column_info = []
-        column_info_file = os.path.join(self._base_dir, 'column_info.txt')
-        if os.path.isfile(column_info_file):
-            with open(column_info_file) as f:
-                start = itertools.dropwhile(lambda l: l.lower().lstrip().startswith('#'), f)
-                column_reader = list(csv.reader(start, delimiter=',', quotechar='"'))
-                for row_ind, row in enumerate(column_reader):
-                    if row_ind > self._skip_initial_rows:
-                        column_info.append(row[2] + ' (' + row[3] + ')')
-
-        scatter_data_list = []
-        for map_names in itertools.combinations(map_names, r=2):
-            data = []
-            labels = []
-            for map_name in map_names:
-                path = os.path.join(self._base_dir, map_name + '.csv')
-                csv_data = np.genfromtxt(path, delimiter=',')[self._skip_initial_rows:]
-                data.append(csv_data)
-                labels.append(map_name)
-
-            arg_list = []
-            arg_list.extend(data)
-            arg_list.extend(labels)
-            arg_list.append(' - '.join(labels))
-
-            scatter_data_list.append(MultiDimensionalScatterData(*arg_list))
-
-        scatter_info = ScatterDataInfo(scatter_data_list, column_info, column, len(column_info))
-
-        plots = ScatterPlots(scatter_info, placement=LowerTrianglePlacement(4))
-        plots.show(dimension=column, show_titles=False)
