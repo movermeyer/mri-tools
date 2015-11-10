@@ -4,7 +4,7 @@ __email__ = 'robbert.harms@maastrichtuniversity.nl'
 __license__ = "BSD 3-Clause"
 __maintainer__ = "Robbert Harms"
 
-VERSION = '0.2.0'
+VERSION = '0.2.1'
 VERSION_STATUS = ''
 
 _items = VERSION.split('-')                                           
