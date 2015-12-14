@@ -49,7 +49,7 @@ def read_epi_params(item_basename):
     """Read all the necessary EPI parameters from text files with the given basename.
 
     Args:
-        basename (str): The basename for all the files we need to read.
+        item_basename (str): The basename for all the files we need to read.
             In particular the following files should exist:
                 - basename + '.read_out_time.txt' (with the read out time)
                 - basename + '.phase_enc_dir.txt' (with the phase encode direction, like AP, PA, LR, RL, SI, IS, ...)

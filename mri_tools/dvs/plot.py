@@ -25,7 +25,7 @@ class DVSPlot(object):
         anything. In those cases call plot_block() when you are finished with the calculations.
 
         Args:
-            dvs_table (DVSDirectionTable or ndarray): Either the DVS direction table object or a 3d array with the
+            table (DVSDirectionTable or ndarray): Either the DVS direction table object or a 3d array with the
                 gradients.
         """
         fig, axes = plt.subplots(nrows=4, ncols=4)

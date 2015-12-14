@@ -189,7 +189,7 @@ def multiply_volumes(volumes, out_dwi_fname, recalculate=True):
     """Multiplies the given volumes and puts the results in the output image.
 
     Args:
-        item_list (list of str): The list with paths to the images we would like to multiply
+        volumes (list of str): The list with paths to the images we would like to multiply
         out_dwi_fname (str): The filename to store the output dwi file with multiplied result volume
         recalculate (boolean): if False we will not recalculate if the output file exists
     """
@@ -219,7 +219,7 @@ def merge_csv(csv_input_files, output_file, delimiter=',', recalculate=True):
     Args:
         csv_input_files (list): the roi files we will concatenate
         output_file (str): the location of the output file
-        delimeter (str): the delimiter to use for reading and writing the csv
+        delimiter (str): the delimiter to use for reading and writing the csv
         recalculate (boolean): if False we return if all the files exist.
     """
     if not os.path.isdir(os.path.dirname(output_file)):

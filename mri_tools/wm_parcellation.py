@@ -110,7 +110,8 @@ def apply_aggregate_to_roi_subjects(csv_region_files, roi_aggregate, output_dir,
 
     Args:
         csv_region_files (list): the roi files to apply the function to, should contain the key 'data' per list item.
-        func (python function): the function to apply to the rois per subject.
+        roi_aggregate (python function): the function to apply to the rois per subject.
+        output_dir (str): the output directory where the csv files are stored
         recalculate (boolean): if False we return if all the output files exist
     """
     data_fnames = [os.path.join(output_dir, str(ind) + '.csv') for ind in range(len(csv_region_files))]

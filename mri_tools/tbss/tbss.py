@@ -76,7 +76,7 @@ def get_tbss_info_dict(fa_maps, subjects_list, tbss_output_dir):
         fa_maps (dict): mapping subjects to fa map file names
         subjects_list (list of str): the list of subjects names. We provide these to make sure the images are
             all analyzed in the correct order.
-        output_dir (str): the output directory
+        tbss_output_dir (str): the output directory
 
     Returns:
         dict: dictionary mapping subjects to output files. This can be used as input to run_tbss_non_FA.
