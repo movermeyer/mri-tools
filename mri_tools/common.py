@@ -131,7 +131,7 @@ def write_unweighted(dwi_fname, bvec_fname, bval_fname, out_fname):
     """
     image_nifti = nib.load(dwi_fname)
     image = image_nifti.get_data()
-    header = image_nifti.get_column_names()
+    header = image_nifti.get_header()
 
     unweighted_indices = find_unweighted_indices(bvec_fname, bval_fname)
     unweighted_volume = image[..., unweighted_indices]
@@ -175,7 +175,7 @@ def combine_volumes(item_list, out_dwi_fname, out_bvec_fname, out_bval_fname):
         bvals.append(np.genfromtxt(path + '.bval'))
 
         nib_container = nib.load(path + '.nii.gz')
-        header = header or nib_container.get_column_names()
+        header = header or nib_container.get_header()
         images.append(nib_container.get_data())
 
     np.savetxt(out_bvec_fname, np.concatenate(bvecs, axis=1))
@@ -200,7 +200,7 @@ def multiply_volumes(volumes, out_dwi_fname, recalculate=True):
     result_img = None
     for volume in volumes:
         nib_container = nib.load(volume)
-        header = header or nib_container.get_column_names()
+        header = header or nib_container.get_header()
 
         if result_img is None:
             result_img = nib_container.get_data()

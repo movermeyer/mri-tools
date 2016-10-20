@@ -1,11 +1,11 @@
 import glob
 import os
 import shutil
-from mri_tools.tbss.nipype_overwrite import tbss_workflow
 import nipype.pipeline.engine as pe
 import nipype.interfaces.io as nio
 from nipype import Workflow
-from mri_tools.tbss.nipype_overwrite.tbss_workflow import create_tbss_non_FA
+from nipype.workflows.dmri.fsl import create_tbss_all
+from nipype.workflows.dmri.fsl import create_tbss_non_FA
 
 __author__ = 'Robbert Harms'
 __date__ = "2015-08-04"
@@ -45,7 +45,7 @@ def run_tbss(fa_maps, subjects_list, output_dir, recalculate=True):
 
     fa_list = [fa_maps[subject] for subject in subjects_list]
 
-    tbss_all = tbss_workflow.create_tbss_all(estimate_skeleton=False)
+    tbss_all = create_tbss_all(estimate_skeleton=False)
     tbss_all.base_dir = work_dir
     tbss_all.inputs.inputnode.fa_list = fa_list
     tbss_all.inputs.inputnode.skeleton_thresh = 0.2

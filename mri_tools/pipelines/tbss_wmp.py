@@ -61,6 +61,9 @@ class TBSS_WMP(object):
         self._additional_maps = additional_maps
         self._region_statistic = region_statistic or MeanAndStdaggregate()
 
+        if not os.path.isdir(self._output_dir):
+            os.makedirs(self._output_dir)
+
         if wm_atlas_info is None:
             self._wm_atlas_info = {
                 'fa': os.path.join(get_fsl_path(), 'data', 'atlases', 'JHU', 'JHU-ICBM-FA-1mm.nii.gz'),
@@ -217,9 +220,9 @@ class TBSS_WMP(object):
             regions = np.hstack([np.genfromtxt(roi, delimiter=',')[:, 1:] for roi in aggregates_csv])
 
             if not os.path.isfile(aggregates_csv_fname):
-                with open(aggregates_csv_fname, 'w') as f:
+                with open(aggregates_csv_fname, 'wb') as f:
                     for subject_ind, subject_id in enumerate(self._subjects_list):
-                        f.write('"' + str(subject_id) + '",')
+                        f.write(str('"' + str(subject_id) + '",').encode('latin1'))
                         np.savetxt(f, regions[subject_ind][None], delimiter=',')
 
         self._write_output_labels(wm_regions_info, recalculate=self._recalculate)

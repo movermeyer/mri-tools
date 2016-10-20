@@ -30,6 +30,7 @@ class ROIAggregate(object):
             list: the names of the aggragate columns
         """
 
+
 class MeanAndStdaggregate(ROIAggregate):
 
     def aggregate(self, values):
@@ -137,20 +138,20 @@ def apply_aggregate_to_roi_subjects(csv_region_files, roi_aggregate, output_dir,
 
         # read subject ids. There is probably a more optimal way here. It is late though.
         subjects_list = []
-        with open(roi, 'rb') as csvfile:
+        with open(roi, 'r') as csvfile:
             csv_reader = csv.reader(csvfile, delimiter=',', quotechar='"')
             for row in csv_reader:
                 if row[0][0] != '#':
                     subjects_list.append(row[0])
 
-        with open(data_fnames[ind], 'w') as f:
-            f.write(comment)
-            f.write('# "subject_id, ' + ', '.join(roi_aggregate.get_column_names()) + '"\n')
+        with open(data_fnames[ind], 'wb') as f:
+            f.write(str(comment).encode('latin1'))
+            f.write(str('# "subject_id, ' + ', '.join(roi_aggregate.get_column_names()) + '"\n').encode('latin1'))
 
             output = [roi_aggregate.aggregate(data[i]) for i in range(data.shape[0])]
 
             for subject_ind, subject_id in enumerate(subjects_list):
-                f.write('"' + str(subject_id) + '",')
+                f.write(str('"' + str(subject_id) + '",').encode('latin1'))
                 np.savetxt(f, np.array(output[subject_ind])[None], delimiter=",")
 
     return data_fnames
@@ -189,11 +190,11 @@ def write_regions(input_image, subjects_list, wm_regions_info, output_dir, recal
         voxel_indices = wm_regions_info.get_voxel_indices(region_id)
         rois_per_subject = np.array([data[..., subject_ind][voxel_indices] for subject_ind in range(data.shape[3])])
 
-        with open(data_fnames[ind], 'w') as f:
-            f.write('# "Region id: ' + str(region_id) + ', label: ' + label + '"' + "\n")
+        with open(data_fnames[ind], 'wb') as f:
+            f.write(str('# "Region id: ' + str(region_id) + ', label: ' + label + '"' + "\n").encode('latin1'))
 
             for subject_ind, subject_id in enumerate(subjects_list):
-                f.write('"' + str(subject_id) + '",')
+                f.write(str('"' + str(subject_id) + '",').encode('latin1'))
                 np.savetxt(f, rois_per_subject[subject_ind, :][None], delimiter=",")
 
     return data_fnames
