@@ -1,4 +1,6 @@
 import os
+import subprocess
+import six
 
 __author__ = 'Robbert Harms'
 __date__ = "2015-05-07"
@@ -57,3 +59,45 @@ def get_fsl_command(application_name):
         return prefixed_name
 
     raise EnvironmentError('Could not find FSL program {}'.format(application_name))
+
+
+def run_command(command, shell=False):
+    """Run a shell command.
+
+    Args:
+        command (str or list): the shell command to run
+        shell (bool): the subprocess flag for shell
+
+    Raises:
+        RuntimeError: if the command returned with exit code -1
+
+    Returns:
+        str: the stdout of the command
+    """
+    if isinstance(command, six.string_types):
+        command = command.split(' ')
+
+    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=shell)
+    stdout, stderr = process.communicate()
+    rc = process.returncode
+    if rc == 1:
+        raise RuntimeError('Error in command. Error message: ' + str(stderr))
+    return stdout
+
+
+def bash_function_exists(function_name):
+    """Check if the bash function with the given name exists.
+
+    Runs the command 'which <function_name>' to check if the function exists.
+
+    Args:
+        function_name (str): the function name to check for existence
+
+    Returns:
+        boolean: if the command exists
+    """
+    try:
+        run_command('which {}'.format(function_name))
+        return True
+    except RuntimeError:
+        return False

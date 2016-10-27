@@ -1,8 +1,10 @@
+from contextlib import contextmanager
+
 import os
 import subprocess
 import numpy as np
 import nibabel as nib
-from mri_tools.shell_utils import get_fsl_command
+from mri_tools.shell_utils import get_fsl_command, run_command
 
 __author__ = 'Robbert Harms'
 __date__ = "2015-05-14"
@@ -230,3 +232,26 @@ def merge_csv(csv_input_files, output_file, delimiter=',', recalculate=True):
 
     regions = np.hstack([np.genfromtxt(roi, delimiter=delimiter) for roi in csv_input_files])
     np.savetxt(output_file, regions, delimiter=delimiter)
+
+
+@contextmanager
+def ensure_unzipped(input_image):
+    """Returns a path to an unzipped version of the given nifti file.
+
+    If the input image is already unzipped this does nothing. If it is zipped we unzip it and remove the unzipped
+    file at the end of the calculations.
+
+    Args:
+        input_image (str): the path to the input nifti file
+
+    Yields:
+        str: the path to the unzipped nifti file
+    """
+    input_image = input_image.strip()
+    if input_image.endswith('.gz'):
+        unzip_fname = input_image[:-len('.gz')]
+        run_command(['gunzip', '-k', '-f', input_image])
+        yield unzip_fname
+        os.remove(unzip_fname)
+    else:
+        yield input_image

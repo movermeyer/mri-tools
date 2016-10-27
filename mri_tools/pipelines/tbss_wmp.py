@@ -1,5 +1,6 @@
 import os
 import numpy as np
+import shutil
 from mri_tools.common import multiply_volumes
 from mri_tools.registration.common import apply_warp
 from mri_tools.registration.register_atlas import register_atlas
@@ -28,7 +29,7 @@ class TBSS_WMP(object):
                           'subj002': '/output/002/Tensor/FA.nii',
                           ...
                          }
-            output_dir (str): the output directory for the CSV files
+            output_dir (str): the output directory
             work_dir (str): the work directory
             additional_maps (dict): dictionary mapping map names to dictionaries containing per subject a map name.
                 Example: {'Charmed_FR': {'subj001': '/output/001/Charmed/FR.nii',
@@ -61,8 +62,14 @@ class TBSS_WMP(object):
         self._additional_maps = additional_maps
         self._region_statistic = region_statistic or MeanAndStdaggregate()
 
-        if not os.path.isdir(self._output_dir):
-            os.makedirs(self._output_dir)
+        self._csv_output_dir = os.path.join(self._output_dir, 'csv')
+        self._skeleton_maps_dir = os.path.join(self._output_dir, 'skeletons')
+
+        if not os.path.isdir(self._csv_output_dir):
+            os.makedirs(self._csv_output_dir)
+
+        if not os.path.isdir(self._skeleton_maps_dir):
+            os.makedirs(self._skeleton_maps_dir)
 
         if wm_atlas_info is None:
             self._wm_atlas_info = {
@@ -73,16 +80,17 @@ class TBSS_WMP(object):
         else:
             self._wm_atlas_info = wm_atlas_info
 
-        self._output_dirs = {
-            'tbss': os.path.join(self._work_dir, '0_tbss'),
+        self._tmp_output_dirs = {
+            'tbss': os.path.join(self._work_dir, '1_tbss'),
             'tbss_non_fa': os.path.join(self._work_dir, '2_tbss_non_fa'),
             'atlas_registration': os.path.join(self._work_dir, '3_registered_atlas'),
             'wmpm_registration': os.path.join(self._work_dir, '4_warped_wmpm'),
+            # for nmr. 5 see output file below
             'region_csv': os.path.join(self._work_dir, '6_rois'),
             'region_aggregates': os.path.join(self._work_dir, '7_rois_aggregates')
         }
 
-        self._output_files = {
+        self._tmp_output_files = {
             'wmpm_skeleton': os.path.join(self._work_dir, '5_wmpm_skeleton_intersection', 'wmpm_skeleton.nii.gz')
         }
 
@@ -103,6 +111,7 @@ class TBSS_WMP(object):
         skeletons = self._get_wm_skeleton_files(tbss_info_dict, additional_map_results)
         regions_files_per_map = self._write_region_files(skeletons, wm_regions_info)
         self._write_output_csv(regions_files_per_map, wm_regions_info)
+        self._copy_skeleton_files(skeletons)
 
     def _run_tbss(self):
         """Runs TBSS on the FA maps.
@@ -110,8 +119,8 @@ class TBSS_WMP(object):
         Returns:
             dict: the dictionary with the location of the TBSS results.
         """
-        run_tbss(self._fa_maps, self._subjects_list, self._output_dirs['tbss'], recalculate=self._recalculate)
-        return get_tbss_info_dict(self._fa_maps, self._subjects_list, self._output_dirs['tbss'])
+        run_tbss(self._fa_maps, self._subjects_list, self._tmp_output_dirs['tbss'], recalculate=self._recalculate)
+        return get_tbss_info_dict(self._fa_maps, self._subjects_list, self._tmp_output_dirs['tbss'])
 
     def _run_tbss_non_FA(self, tbss_info_dict):
         """Run TBSS on non FA maps. Uses the TBSS results.
@@ -125,7 +134,7 @@ class TBSS_WMP(object):
         additional_map_results = {}
         for map_name, subjects in self._additional_maps.items():
             skeleton_fname = run_tbss_non_FA(tbss_info_dict, subjects, self._subjects_list,
-                                             self._output_dirs['tbss_non_fa'],
+                                             self._tmp_output_dirs['tbss_non_fa'],
                                              output_name=map_name, recalculate=self._recalculate)
             additional_map_results.update({map_name: skeleton_fname})
 
@@ -141,7 +150,7 @@ class TBSS_WMP(object):
             dict: field coefficient and warped image locations
         """
         return register_atlas(self._wm_atlas_info['fa'], tbss_info_dict['mean_fa'],
-                              self._output_dirs['atlas_registration'], recalculate=False)
+                              self._tmp_output_dirs['atlas_registration'], recalculate=False)
 
     def _warp_wmpm(self, tbss_info_dict, atlas_info_dict):
         """Warp the white matter parcellation map using the transformation from the atlas registration.
@@ -154,7 +163,7 @@ class TBSS_WMP(object):
             str: the location of the output warped WMPM
         """
         info_dict = apply_warp(self._wm_atlas_info['wmpm'], tbss_info_dict['mean_fa'],
-                               atlas_info_dict['fieldcoeff_file'], self._output_dirs['wmpm_registration'],
+                               atlas_info_dict['fieldcoeff_file'], self._tmp_output_dirs['wmpm_registration'],
                                recalculate=False, interp='nn')
         return info_dict['warped_image']
 
@@ -170,9 +179,9 @@ class TBSS_WMP(object):
         Returns:
             str: the location of the resulting intersection file.
         """
-        multiply_volumes([tbss_info_dict['skeleton_mask'], warped_wmpm_file], self._output_files['wmpm_skeleton'],
+        multiply_volumes([tbss_info_dict['skeleton_mask'], warped_wmpm_file], self._tmp_output_files['wmpm_skeleton'],
                          recalculate=False)
-        return self._output_files['wmpm_skeleton']
+        return self._tmp_output_files['wmpm_skeleton']
 
     def _get_wm_skeleton_files(self, tbss_info_dict, additional_map_results):
         """Get a dictionary with the names and the locations of all the skeleton files.
@@ -196,7 +205,7 @@ class TBSS_WMP(object):
         """
         regions_files_per_map = {}
         for map_name, skeleton_file in skeleton_files.items():
-            output_dir = os.path.join(self._output_dirs['region_csv'], map_name)
+            output_dir = os.path.join(self._tmp_output_dirs['region_csv'], map_name)
             csv_data_files = write_regions(skeleton_file, self._subjects_list, wm_regions_info, output_dir,
                                            recalculate=False)
 
@@ -212,11 +221,12 @@ class TBSS_WMP(object):
             wm_regions_info (RegionsInfo): the regions info class
         """
         for map_name, region_files in regions_files_per_map.items():
-            output_dir = os.path.join(self._output_dirs['region_aggregates'], map_name)
-            aggregates_csv = apply_aggregate_to_roi_subjects(region_files, self._region_statistic,
-                                                             output_dir, recalculate=False)
+            aggregates_csv = apply_aggregate_to_roi_subjects(
+                region_files, self._region_statistic,
+                os.path.join(self._tmp_output_dirs['region_aggregates'], map_name),
+                recalculate=False)
 
-            aggregates_csv_fname = os.path.join(self._output_dir, map_name + '.csv')
+            aggregates_csv_fname = os.path.join(self._csv_output_dir, map_name + '.csv')
             regions = np.hstack([np.genfromtxt(roi, delimiter=',')[:, 1:] for roi in aggregates_csv])
 
             if not os.path.isfile(aggregates_csv_fname):
@@ -225,15 +235,17 @@ class TBSS_WMP(object):
                         f.write(str('"' + str(subject_id) + '",').encode('latin1'))
                         np.savetxt(f, regions[subject_ind][None], delimiter=',')
 
-        self._write_output_labels(wm_regions_info, recalculate=self._recalculate)
+        self._write_output_labels(wm_regions_info, self._csv_output_dir, recalculate=self._recalculate)
 
-    def _write_output_labels(self, wm_regions_info, recalculate=True):
+    def _write_output_labels(self, wm_regions_info, output_dir, recalculate=True):
         """Write the file with the regions names.
 
         Args:
+            output_dir (str): the directory to write the column info file to
             wm_regions_info (RegionsInfo): the regions info class
+            recalculate (boolean): if you want to recreate this file if it already exists
         """
-        output_file = os.path.join(self._output_dir, 'column_info.txt')
+        output_file = os.path.join(output_dir, 'column_info.txt')
 
         if not recalculate and os.path.isfile(output_file):
             return output_file
@@ -254,3 +266,15 @@ class TBSS_WMP(object):
             f.writelines(rows)
 
         return output_file
+
+    def _copy_skeleton_files(self, skeleton_files):
+        """Copy all the skeleton files to a output directory.
+
+        Args:
+            skeleton_files (dict):  a dictionary with the names and the locations of all the skeleton files.
+        """
+        for map_name, skeleton_file in skeleton_files.items():
+            output_file = os.path.join(self._skeleton_maps_dir, map_name + '.nii.gz')
+
+            if not os.path.exists(output_file) or self._recalculate:
+                shutil.copy(skeleton_file, output_file)

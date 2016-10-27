@@ -45,5 +45,5 @@ class DiscreteSlider(Slider):
         self.val = val
         if not self.eventson:
             return
-        for cid, func in self.observers.iteritems():
+        for cid, func in self.observers.items():
             func(discrete_val)

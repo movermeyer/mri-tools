@@ -1,9 +1,12 @@
 import csv
 import glob
-import os
 import xml.etree.ElementTree as ET
-import numpy as np
+
 import nibabel as nib
+import numpy as np
+import os
+
+from mri_tools.common import ensure_unzipped
 
 __author__ = 'Robbert Harms'
 __date__ = "2015-08-06"
@@ -184,18 +187,19 @@ def write_regions(input_image, subjects_list, wm_regions_info, output_dir, recal
     else:
         map(os.remove, glob.glob(os.path.join(output_dir, '*')))
 
-    data = nib.load(input_image).get_data()
+    with ensure_unzipped(input_image) as unzipped_image:
+        data = nib.load(unzipped_image).get_data()
 
-    for ind, (region_id, label) in enumerate(wm_regions_info.get_labels_dict().items()):
-        voxel_indices = wm_regions_info.get_voxel_indices(region_id)
-        rois_per_subject = np.array([data[..., subject_ind][voxel_indices] for subject_ind in range(data.shape[3])])
+        for ind, (region_id, label) in enumerate(wm_regions_info.get_labels_dict().items()):
+            voxel_indices = wm_regions_info.get_voxel_indices(region_id)
+            rois_per_subject = np.array([data[..., subject_ind][voxel_indices] for subject_ind in range(data.shape[3])])
 
-        with open(data_fnames[ind], 'wb') as f:
-            f.write(str('# "Region id: ' + str(region_id) + ', label: ' + label + '"' + "\n").encode('latin1'))
+            with open(data_fnames[ind], 'wb') as f:
+                f.write(str('# "Region id: ' + str(region_id) + ', label: ' + label + '"' + "\n").encode('latin1'))
 
-            for subject_ind, subject_id in enumerate(subjects_list):
-                f.write(str('"' + str(subject_id) + '",').encode('latin1'))
-                np.savetxt(f, rois_per_subject[subject_ind, :][None], delimiter=",")
+                for subject_ind, subject_id in enumerate(subjects_list):
+                    f.write(str('"' + str(subject_id) + '",').encode('latin1'))
+                    np.savetxt(f, rois_per_subject[subject_ind, :][None], delimiter=",")
 
     return data_fnames
 

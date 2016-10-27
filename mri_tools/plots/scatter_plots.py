@@ -2,7 +2,6 @@ import matplotlib.pyplot as plt
 import matplotlib
 import numpy as np
 from scipy.stats import linregress
-import matplotlib.patches as mpatches
 
 from mri_tools.plots.layouts import SquareGridLayout
 from mri_tools.plots.widgets import DiscreteSlider
@@ -62,6 +61,7 @@ class ScatterDataInterface(object):
         Returns:
             int: the available number of dimensions available
         """
+
 
 class SimpleScatterData(ScatterDataInterface):
 
@@ -341,7 +341,7 @@ class MultiROIScatterPlots(object):
             axis = self.placement.get_axis(ind, self._scatter_info.get_nmr_plots())
             axis.plot(np.arange(bb_min, bb_max, 0.01), np.arange(bb_min, bb_max, 0.01), 'k')
 
-            color_cycle = axis._get_lines.color_cycle
+            color_cycle = iter([color['color'] for color in list(matplotlib.rcParams['axes.prop_cycle'])])
 
             for dimension in self.dimensions:
                 color = next(color_cycle)
