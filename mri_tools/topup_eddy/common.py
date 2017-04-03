@@ -30,8 +30,17 @@ def run_pre_processing(epi_name, alt_epi_name, output_name, input_dir, tmp_dir, 
 
     correction_wf = all_peb_pipeline(epi_params=read_epi_params(epi_bname),
                                      altepi_params=read_epi_params(alt_epi_bname))
-    correction_wf.inputs.inputnode.in_file = epi_bname + '.nii.gz'
-    correction_wf.inputs.inputnode.alt_file = alt_epi_bname + '.nii.gz'
+
+    if os.path.exists(epi_bname + '.nii'):
+        correction_wf.inputs.inputnode.in_file = epi_bname + '.nii'
+    else:
+        correction_wf.inputs.inputnode.in_file = epi_bname + '.nii.gz'
+
+    if os.path.exists(alt_epi_bname + '.nii'):
+        correction_wf.inputs.inputnode.alt_file = alt_epi_bname + '.nii'
+    else:
+        correction_wf.inputs.inputnode.alt_file = alt_epi_bname + '.nii.gz'
+
     correction_wf.inputs.inputnode.in_bval = epi_bname + '.bval'
     correction_wf.inputs.inputnode.in_bvec = epi_bname + '.bvec'
 
@@ -56,7 +65,7 @@ def read_epi_params(item_basename):
 
     Returns:
         dict: A dictionary for use in the nipype workflow 'all_peb_pipeline'. It contains the keys:
-            - read_out_time (the read out time of the scan)
+            - read_out_time (the read out time of the scan in seconds)
             - enc_dir (the phase encode direction, converted to nipype standards (x, -x, y, -y, ...))
     """
     with open(item_basename + '.read_out_times.txt', 'r') as f:

@@ -41,16 +41,14 @@ class PrismaInfoReader(InfoReader):
         echo_spacing * ((base-resolution [* phase oversampling, if used] * (partial Fourier Factor /  GRAPPAFactor))-1)
 
         As an example, let's assume that your matrix has 128 rows along the phase encoding direction,
-        you used a partial Fourier factor of 6/8 and a GRAPPA factor of 2,
-        the right number is 47.
-
-        If the echo spacing is 0.0005 s, then your total readout time is 0.0235s.
+        you used a partial Fourier factor of 6/8 and a GRAPPA factor of 2, then the multiplication factor is 47.
+        Suppose then that the echo spacing is 0.0005 s which makes the total readout time 0.0235s.
 
         It is assumed that the Phase oversampling is in percentages and is calculated as:
             (100 + phase_oversampling_percentage)/100
 
         Returns:
-            float: The read out time in seconds.
+            dict: The read out time in seconds for all the measurements
         """
         echo_spacings = self._get_echo_spacing()
         base_resolutions = self._get_base_resolution()

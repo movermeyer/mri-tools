@@ -3,9 +3,9 @@ import os
 import shutil
 import nipype.pipeline.engine as pe
 import nipype.interfaces.io as nio
+from nipype import Function
 from nipype import Workflow
-from nipype.workflows.dmri.fsl import create_tbss_all
-from nipype.workflows.dmri.fsl import create_tbss_non_FA
+from mri_tools.tbss.nipype_overwrite.fsl.tbss import create_tbss_all, create_tbss_non_FA
 
 __author__ = 'Robbert Harms'
 __date__ = "2015-08-04"
@@ -117,7 +117,7 @@ def run_tbss_non_FA(tbss_info_dict, maps, subjects_list, output_dir, output_name
     Returns:
         The full path the output file containing the tracts.
     """
-    work_dir = os.path.join(output_dir, '_nipype_work_dir')
+    work_dir = os.path.join(output_dir, '_nipype_work_dir', output_name.replace('.', '_'))
     output_file = os.path.join(output_dir, output_name + '.nii.gz')
 
     if not recalculate and os.path.isfile(output_file):
@@ -126,7 +126,7 @@ def run_tbss_non_FA(tbss_info_dict, maps, subjects_list, output_dir, output_name
     maps_list = [maps[subject] for subject in subjects_list]
     field_list = [tbss_info_dict['field_list'][subject] for subject in subjects_list]
 
-    tbss_non_fa = create_tbss_non_FA()
+    tbss_non_fa = create_tbss_non_FA(output_file=output_file)
     tbss_non_fa.base_dir = work_dir
     tbss_non_fa.inputs.inputnode.file_list = maps_list
     tbss_non_fa.inputs.inputnode.field_list = field_list
@@ -136,28 +136,27 @@ def run_tbss_non_FA(tbss_info_dict, maps, subjects_list, output_dir, output_name
     tbss_non_fa.inputs.inputnode.distance_map = tbss_info_dict['distance_map']
     tbss_non_fa.inputs.inputnode.all_FA_file = tbss_info_dict['merge_fa']
 
-    data_sink = pe.Node(nio.DataSink(), 'DataSink')
-    data_sink.inputs.base_directory = output_dir
-    data_sink.inputs.parameterization = True
-    data_sink.inputs.substitutions = ('_nipype_work_dir/', '')
+    data_sink = pe.Node(Function(['input'], [], function=void), 'DataSink')
 
     wf = Workflow(name='tbss_non_fa_wf', base_dir=work_dir)
-    wf.connect([(tbss_non_fa, data_sink, [('outputnode.projected_nonFA_file', '_nonFA_file')])])
+    wf.connect([(tbss_non_fa, data_sink, [('outputnode.projected_nonFA_file', 'input')])])
 
     wf.run(plugin='MultiProc')
 
-    shutil.move(_first_img_in_dir(os.path.join(output_dir, '_nonFA_file')),
-                os.path.join(output_dir, output_name + '.nii.gz'))
-    shutil.rmtree(os.path.join(output_dir, '_nonFA_file'))
+    shutil.rmtree(work_dir)
 
     return output_file
+
+
+def void(input):
+    pass
 
 
 def _first_img_in_dir(directory):
     niftis = glob.glob(os.path.join(directory, '*.nii.gz'))
 
     if not len(niftis):
-        raise RuntimeError('No nifti image found in the given directory.')
+        raise RuntimeError('No nifti image found in the given directory: {}.'.format(directory))
 
     return niftis[0]
 

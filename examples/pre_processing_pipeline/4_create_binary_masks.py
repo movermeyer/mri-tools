@@ -10,5 +10,3 @@ item_dir = '/home/robbert/programming/python/mdt/bin/multite_20150417_alard/5_re
 item = 'combined'
 
 create_mask_from_mean_unweighted(item_dir, item)
-
-

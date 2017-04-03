@@ -1,6 +1,10 @@
+from subprocess import call
+
 import os
 import numpy as np
 import shutil
+import six
+
 from mri_tools.common import multiply_volumes
 from mri_tools.registration.common import apply_warp
 from mri_tools.registration.register_atlas import register_atlas
@@ -103,15 +107,46 @@ class TBSS_WMP(object):
         self._recalculate = recalculate
 
         tbss_info_dict = self._run_tbss()
+        tbss_info_dict = self._extract_niftis(tbss_info_dict)
         additional_map_results = self._run_tbss_non_FA(tbss_info_dict)
-        atlas_info_dict = self._register_atlas(tbss_info_dict)
-        warped_wmpm = self._warp_wmpm(tbss_info_dict, atlas_info_dict)
-        wmpm_skeleton = self._create_wmpm_skeleton(tbss_info_dict, warped_wmpm)
-        wm_regions_info = RegionsInfo(wmpm_skeleton, labels_file=self._wm_atlas_info['labels'])
-        skeletons = self._get_wm_skeleton_files(tbss_info_dict, additional_map_results)
-        regions_files_per_map = self._write_region_files(skeletons, wm_regions_info)
-        self._write_output_csv(regions_files_per_map, wm_regions_info)
-        self._copy_skeleton_files(skeletons)
+        # atlas_info_dict = self._register_atlas(tbss_info_dict)
+        # warped_wmpm = self._warp_wmpm(tbss_info_dict, atlas_info_dict)
+        # wmpm_skeleton = self._create_wmpm_skeleton(tbss_info_dict, warped_wmpm)
+        # wm_regions_info = RegionsInfo(wmpm_skeleton, labels_file=self._wm_atlas_info['labels'])
+        # skeletons = self._get_wm_skeleton_files(tbss_info_dict, additional_map_results)
+        # regions_files_per_map = self._write_region_files(skeletons, wm_regions_info)
+        # self._write_output_csv(regions_files_per_map, wm_regions_info)
+        # self._copy_skeleton_files(skeletons)
+
+    def _extract_niftis(self, tbss_info_dict):
+        """Extract some of the niftis in the tbss info dict and return a dict with the unzipped filenames.
+
+        Since this pipeline uses very large files, having zipped files requires a lot of memory to keep the files in
+        memory. Unzipping them before continuing lowers the memory usage.
+
+        Args:
+            tbss_info_dict (dict): the TBSS output information dictionary
+
+        Returns:
+            dict: the TBSS output information dictionary pointing to the unzipped files
+        """
+        updated_dict = {}
+        for key, value in tbss_info_dict.items():
+            if isinstance(value, six.string_types):
+                if value.endswith('.nii.gz'):
+                    new_filename = value[:-len('.nii.gz')] + '_unzipped.nii'
+
+                    if not os.path.isfile(new_filename):
+                        if not os.path.isfile(value[:-3]):
+                            call(['gunzip', '-f', '--keep', value])
+                        shutil.move(value[:-3], new_filename)
+
+                    updated_dict[key] = new_filename
+                else:
+                    updated_dict[key] = value
+            else:
+                updated_dict[key] = value
+        return updated_dict
 
     def _run_tbss(self):
         """Runs TBSS on the FA maps.
