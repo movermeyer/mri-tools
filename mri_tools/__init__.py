@@ -4,10 +4,10 @@ __email__ = 'robbert.harms@maastrichtuniversity.nl'
 __license__ = "BSD 3-Clause"
 __maintainer__ = "Robbert Harms"
 
-VERSION = '0.2.1'
+VERSION = '0.2.2'
 VERSION_STATUS = ''
 
-_items = VERSION.split('-')                                           
+_items = VERSION.split('-')
 VERSION_NUMBER_PARTS = tuple(int(i) for i in _items[0].split('.'))
 if len(_items) > 1:
     VERSION_STATUS = _items[1]
