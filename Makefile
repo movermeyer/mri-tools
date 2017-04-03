@@ -105,7 +105,7 @@ release-ubuntu-ppa: dist-ubuntu
 	done
 
 release-github:
-	ls
+	git push . latest_release:master
 
 dist: clean
 	$(PYTHON) setup.py sdist
