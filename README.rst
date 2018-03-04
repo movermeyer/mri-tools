@@ -8,7 +8,7 @@ MRI Tools
 .. image:: https://travis-ci.org/robbert-harms/mri-tools.svg?branch=master
         :target: https://travis-ci.org/robbert-harms/mri-tools
 
-.. image:: https://pypip.in/v/mri-tools/badge.png
+.. image:: https://img.shields.io/pypi/v/mri-tools.svg
         :target: https://pypi.python.org/pypi/mri-tools
 
 
